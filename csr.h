@@ -99,6 +99,10 @@ CSR_API CSR_INLINE void csr_m4x4_mul_v4(float result[4], float m[16], float v[4]
   result[3] = m[3] * v[0] + m[7] * v[1] + m[11] * v[2] + m[15] * v[3];
 }
 
+/* #############################################################################
+ * # RENDERING Functions
+ * #############################################################################
+ */
 /* Converts a point from normalized device coordinates(NDC) to screen space. */
 CSR_API CSR_INLINE void csr_ndc_to_screen(float result[3], float ndc_pos[4])
 {
