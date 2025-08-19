@@ -54,27 +54,6 @@ CSR_API CSR_INLINE int csr_maxi(int a, int b)
   return (a > b) ? a : b;
 }
 
-#define CSR_WIDTH 800
-#define CSR_HEIGHT 600
-
-typedef struct csr_color
-{
-  unsigned char r;
-  unsigned char g;
-  unsigned char b;
-
-} csr_color;
-
-CSR_API CSR_INLINE csr_color csr_color_init(unsigned char r, unsigned char g, unsigned char b)
-{
-  csr_color result;
-  result.r = r;
-  result.g = g;
-  result.b = b;
-
-  return result;
-}
-
 CSR_API CSR_INLINE void csr_pos_init(float *pos, float x, float y, float z, float w)
 {
   pos[0] = x;
@@ -103,34 +82,88 @@ CSR_API CSR_INLINE void csr_m4x4_mul_v4(float result[4], float m[16], float v[4]
  * # RENDERING Functions
  * #############################################################################
  */
-/* Converts a point from normalized device coordinates(NDC) to screen space. */
-CSR_API CSR_INLINE void csr_ndc_to_screen(float result[3], float ndc_pos[4])
+typedef struct csr_color
 {
-  result[0] = (ndc_pos[0] + 1.0f) * 0.5f * (float)CSR_WIDTH;
-  result[1] = (1.0f - ndc_pos[1]) * 0.5f * (float)CSR_HEIGHT;
+  unsigned char r;
+  unsigned char g;
+  unsigned char b;
+
+} csr_color;
+
+typedef struct csr_model
+{
+
+  int width;              /* render area width in pixels                             */
+  int height;             /* render area height in pixels                            */
+  csr_color clear_color;  /* The default clear color for the screen                  */
+  csr_color *framebuffer; /* memory pointer for framebuffer                          */
+  float *zbuffer;         /* memory pointer for zbuffer                              */
+
+} csr_model;
+
+CSR_API CSR_INLINE unsigned long csr_memory_size(int width, int height)
+{
+  return (unsigned long)(width * height * (int)sizeof(csr_color) + /* framebuffer size */
+                         width * height * (int)sizeof(float)       /* zbuffer size     */
+  );
+}
+
+CSR_API CSR_INLINE int csr_init_model(csr_model *model, void *memory, unsigned long memory_size, int width, int height, csr_color clear_color)
+{
+  unsigned long memory_framebuffer_size = (unsigned long)(width * height) * (unsigned long)sizeof(csr_color);
+
+  if (memory_size < csr_memory_size(width, height))
+  {
+    return 0;
+  }
+
+  model->width = width;
+  model->height = height;
+  model->clear_color = clear_color;
+  model->framebuffer = (csr_color *)memory;
+  model->zbuffer = (float *)((char *)memory + memory_framebuffer_size);
+
+  return 1;
+}
+
+CSR_API CSR_INLINE csr_color csr_color_init(unsigned char r, unsigned char g, unsigned char b)
+{
+  csr_color result;
+  result.r = r;
+  result.g = g;
+  result.b = b;
+
+  return result;
+}
+
+/* Converts a point from normalized device coordinates(NDC) to screen space. */
+CSR_API CSR_INLINE void csr_ndc_to_screen(csr_model *model, float result[3], float ndc_pos[4])
+{
+  result[0] = (ndc_pos[0] + 1.0f) * 0.5f * (float)model->width;
+  result[1] = (1.0f - ndc_pos[1]) * 0.5f * (float)model->height;
   result[2] = ndc_pos[2];
 }
 
 /* Renders a single pixel to the framebuffer with depth testing. */
-CSR_API CSR_INLINE void csr_put_pixel(csr_color *framebuffer, float *zbuffer, int x, int y, float z, csr_color color)
+CSR_API CSR_INLINE void csr_put_pixel(csr_model *model, int x, int y, float z, csr_color color)
 {
   int index;
 
-  if (x >= 0 && x < CSR_WIDTH && y >= 0 && y < CSR_HEIGHT)
+  if (x >= 0 && x < model->width && y >= 0 && y < model->height)
   {
-    index = y * CSR_WIDTH + x;
+    index = y * model->width + x;
 
     /* Depth testing: only draw if the new pixel is closer than the existing one */
-    if (z < zbuffer[index])
+    if (z < model->zbuffer[index])
     {
-      framebuffer[index] = color;
-      zbuffer[index] = z;
+      model->framebuffer[index] = color;
+      model->zbuffer[index] = z;
     }
   }
 }
 
 /* Fills a triangle using the barycentric coordinate method with color interpolation. */
-CSR_API CSR_INLINE void csr_draw_triangle(csr_color *framebuffer, float *zbuffer, float p0[3], float p1[3], float p2[3], csr_color c0, csr_color c1, csr_color c2)
+CSR_API CSR_INLINE void csr_draw_triangle(csr_model *model, float p0[3], float p1[3], float p2[3], csr_color c0, csr_color c1, csr_color c2)
 {
   /* Bounding box for the triangle */
   int min_x = (int)csr_minf(p0[0], csr_minf(p1[0], p2[0]));
@@ -149,8 +182,8 @@ CSR_API CSR_INLINE void csr_draw_triangle(csr_color *framebuffer, float *zbuffer
   /* Clamp bounding box to screen dimensions */
   min_x = csr_maxi(0, min_x);
   min_y = csr_maxi(0, min_y);
-  max_x = csr_mini(CSR_WIDTH - 1, max_x);
-  max_y = csr_mini(CSR_HEIGHT - 1, max_y);
+  max_x = csr_mini(model->width - 1, max_x);
+  max_y = csr_mini(model->height - 1, max_y);
 
   {
     float inv_area = 1.0f / area;
@@ -193,7 +226,7 @@ CSR_API CSR_INLINE void csr_draw_triangle(csr_color *framebuffer, float *zbuffer
           pixel_color.g = (unsigned char)(c0.g * w0 + c1.g * w1 + c2.g * w2);
           pixel_color.b = (unsigned char)(c0.b * w0 + c1.b * w1 + c2.b * w2);
 
-          csr_put_pixel(framebuffer, zbuffer, x, y, z, pixel_color);
+          csr_put_pixel(model, x, y, z, pixel_color);
         }
 
         /* Increment barycentric coordinates with pre-calculated deltas */
@@ -210,17 +243,17 @@ CSR_API CSR_INLINE void csr_draw_triangle(csr_color *framebuffer, float *zbuffer
   }
 }
 
-CSR_API CSR_INLINE void csr_clear_screen(csr_color *framebuffer, float *zbuffer, csr_color clear_color)
+CSR_API CSR_INLINE void csr_clear_screen(csr_model *model)
 {
   int i;
-  for (i = 0; i < CSR_WIDTH * CSR_HEIGHT; ++i)
+  for (i = 0; i < model->width * model->height; ++i)
   {
-    framebuffer[i] = clear_color;
-    zbuffer[i] = 1.0f;
+    model->framebuffer[i] = model->clear_color;
+    model->zbuffer[i] = 1.0f;
   }
 }
 
-CSR_API CSR_INLINE void csr_render(csr_color *framebuffer, float *zbuffer, float *vertices, unsigned long num_vertices, int *indices, unsigned long num_indices, float projection_view_model_matrix[16])
+CSR_API CSR_INLINE void csr_render(csr_model *model, float *vertices, unsigned long num_vertices, int *indices, unsigned long num_indices, float projection_view_model_matrix[16])
 {
   unsigned long i;
 
@@ -278,9 +311,9 @@ CSR_API CSR_INLINE void csr_render(csr_color *framebuffer, float *zbuffer, float
     csr_v4_divf(v2_ndc, v2_transformed, v2_transformed[3]);
 
     /* 3. Viewport Transform (NDC to Screen Space) */
-    csr_ndc_to_screen(v0_screen, v0_ndc);
-    csr_ndc_to_screen(v1_screen, v1_ndc);
-    csr_ndc_to_screen(v2_screen, v2_ndc);
+    csr_ndc_to_screen(model, v0_screen, v0_ndc);
+    csr_ndc_to_screen(model, v1_screen, v1_ndc);
+    csr_ndc_to_screen(model, v2_screen, v2_ndc);
 
     /* 4. CCW-Front Backface culling */
     {
@@ -297,7 +330,7 @@ CSR_API CSR_INLINE void csr_render(csr_color *framebuffer, float *zbuffer, float
     }
 
     /* 5. Rasterization & Depth Testing */
-    csr_draw_triangle(framebuffer, zbuffer, v0_screen, v1_screen, v2_screen, color0, color1, color2);
+    csr_draw_triangle(model, v0_screen, v1_screen, v2_screen, color0, color1, color2);
   }
 }
 
