@@ -79,24 +79,29 @@ int main(void)
 
   /* Index data to form the triangles of a cube. */
   int indices[] = {
-      /* Front face (+z normal) */
-      0, 1, 2,
-      0, 2, 3,
-      /* Back face (-z normal) */
-      4, 7, 6,
-      4, 6, 5,
+      /* Front face (+z normal, facing camera) */
+      0, 3, 2,
+      0, 2, 1,
+
+      /* Back face (-z normal, away from camera) */
+      4, 5, 6,
+      4, 6, 7,
+
       /* Top face (+y normal) */
-      2, 3, 7,
-      2, 7, 6,
+      3, 7, 6,
+      3, 6, 2,
+
       /* Bottom face (-y normal) */
-      0, 4, 5,
-      0, 5, 1,
+      0, 1, 5,
+      0, 5, 4,
+
       /* Right face (+x normal) */
-      1, 5, 6,
-      1, 6, 2,
+      1, 2, 6,
+      1, 6, 5,
+
       /* Left face (-x normal) */
-      0, 3, 7,
-      0, 7, 4};
+      0, 4, 7,
+      0, 7, 3};
 
   unsigned long num_indices = sizeof(indices) / sizeof(indices[0]);
 

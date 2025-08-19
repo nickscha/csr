@@ -278,7 +278,21 @@ CSR_API CSR_INLINE void csr_render(csr_color *framebuffer, float *zbuffer, float
     csr_ndc_to_screen(v1_screen, v1_ndc);
     csr_ndc_to_screen(v2_screen, v2_ndc);
 
-    /* 4. Rasterization & Depth Testing */
+    /* 4. CCW-Front Backface culling */
+    {
+      float ax = v1_screen[0] - v0_screen[0];
+      float ay = v1_screen[1] - v0_screen[1];
+      float bx = v2_screen[0] - v0_screen[0];
+      float by = v2_screen[1] - v0_screen[1];
+      float face = ax * by - ay * bx;
+
+      if (face <= 0.0f)
+      {
+        continue;
+      }
+    }
+
+    /* 5. Rasterization & Depth Testing */
     csr_draw_triangle(framebuffer, zbuffer, v0_screen, v1_screen, v2_screen, color0, color1, color2);
   }
 }
