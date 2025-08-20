@@ -64,10 +64,12 @@ CSR_API CSR_INLINE void csr_pos_init(float *pos, float x, float y, float z, floa
 
 CSR_API CSR_INLINE void csr_v4_divf(float result[4], float v[4], float f)
 {
-  result[0] = v[0] / f;
-  result[1] = v[1] / f;
-  result[2] = v[2] / f;
-  result[3] = v[3] / f;
+  float inv_f = 1.0f / f;
+  
+  result[0] = v[0] * inv_f;
+  result[1] = v[1] * inv_f;
+  result[2] = v[2] * inv_f;
+  result[3] = v[3] * inv_f;
 }
 
 CSR_API CSR_INLINE void csr_m4x4_mul_v4(float result[4], float m[16], float v[4])
@@ -148,7 +150,7 @@ CSR_API CSR_INLINE void csr_clear_screen(csr_model *model)
 {
   int size = model->width * model->height;
   csr_color c = model->clear_color;
-  
+
   int i = 0;
 
   for (; i + 4 <= size; i += 4)
