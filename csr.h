@@ -93,11 +93,11 @@ typedef struct csr_color
 typedef struct csr_model
 {
 
-  int width;              /* render area width in pixels                             */
-  int height;             /* render area height in pixels                            */
-  csr_color clear_color;  /* The default clear color for the screen                  */
-  csr_color *framebuffer; /* memory pointer for framebuffer                          */
-  float *zbuffer;         /* memory pointer for zbuffer                              */
+  int width;              /* render area width in pixels            */
+  int height;             /* render area height in pixels           */
+  csr_color clear_color;  /* The default clear color for the screen */
+  csr_color *framebuffer; /* memory pointer for framebuffer         */
+  float *zbuffer;         /* memory pointer for zbuffer             */
 
 } csr_model;
 
@@ -142,24 +142,6 @@ CSR_API CSR_INLINE void csr_ndc_to_screen(csr_model *model, float result[3], flo
   result[0] = (ndc_pos[0] + 1.0f) * 0.5f * (float)model->width;
   result[1] = (1.0f - ndc_pos[1]) * 0.5f * (float)model->height;
   result[2] = ndc_pos[2];
-}
-
-/* Renders a single pixel to the framebuffer with depth testing. */
-CSR_API CSR_INLINE void csr_put_pixel(csr_model *model, int x, int y, float z, csr_color color)
-{
-  int index;
-
-  if (x >= 0 && x < model->width && y >= 0 && y < model->height)
-  {
-    index = y * model->width + x;
-
-    /* Depth testing: only draw if the new pixel is closer than the existing one */
-    if (z < model->zbuffer[index])
-    {
-      model->framebuffer[index] = color;
-      model->zbuffer[index] = z;
-    }
-  }
 }
 
 /* Fills a triangle using the barycentric coordinate method with color interpolation. */
@@ -221,12 +203,19 @@ CSR_API CSR_INLINE void csr_draw_triangle(csr_model *model, float p0[3], float p
           /* Interpolate Z-depth and color using w values */
           float z = p0[2] * w0 + p1[2] * w1 + p2[2] * w2;
 
-          csr_color pixel_color;
-          pixel_color.r = (unsigned char)(c0.r * w0 + c1.r * w1 + c2.r * w2);
-          pixel_color.g = (unsigned char)(c0.g * w0 + c1.g * w1 + c2.g * w2);
-          pixel_color.b = (unsigned char)(c0.b * w0 + c1.b * w1 + c2.b * w2);
+          int index = y * model->width + x;
 
-          csr_put_pixel(model, x, y, z, pixel_color);
+          /* Depth testing: only draw if the new pixel is closer than the existing one */
+          if (z < model->zbuffer[index])
+          {
+            csr_color pixel_color;
+            pixel_color.r = (unsigned char)(c0.r * w0 + c1.r * w1 + c2.r * w2);
+            pixel_color.g = (unsigned char)(c0.g * w0 + c1.g * w1 + c2.g * w2);
+            pixel_color.b = (unsigned char)(c0.b * w0 + c1.b * w1 + c2.b * w2);
+
+            model->framebuffer[index] = pixel_color;
+            model->zbuffer[index] = z;
+          }
         }
 
         /* Increment barycentric coordinates with pre-calculated deltas */
