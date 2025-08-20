@@ -89,7 +89,6 @@ typedef struct csr_color
   unsigned char r;
   unsigned char g;
   unsigned char b;
-  unsigned char a;
 
 } csr_color;
 
@@ -135,7 +134,6 @@ CSR_API CSR_INLINE csr_color csr_init_color(unsigned char r, unsigned char g, un
   result.r = r;
   result.g = g;
   result.b = b;
-  result.a = 255;
 
   return result;
 }
@@ -151,33 +149,26 @@ CSR_API CSR_INLINE void csr_ndc_to_screen(csr_model *model, float result[3], flo
 CSR_API CSR_INLINE void csr_clear_screen(csr_model *model)
 {
   int size = model->width * model->height;
-  unsigned int clear_pixel = *(unsigned int *)&model->clear_color;
-  unsigned int *fb = (unsigned int *)model->framebuffer;
-  float *zb = model->zbuffer;
-  int i;
+  csr_color c = model->clear_color;
 
-  /* Unrolled loop for faster framebuffer clearing */
-  for (i = 0; i + 8 <= size; i += 8)
+  int i = 0;
+
+  for (; i + 4 <= size; i += 4)
   {
-    fb[i] = clear_pixel;
-    fb[i + 1] = clear_pixel;
-    fb[i + 2] = clear_pixel;
-    fb[i + 3] = clear_pixel;
-    fb[i + 4] = clear_pixel;
-    fb[i + 5] = clear_pixel;
-    fb[i + 6] = clear_pixel;
-    fb[i + 7] = clear_pixel;
+    model->framebuffer[i] = c;
+    model->framebuffer[i + 1] = c;
+    model->framebuffer[i + 2] = c;
+    model->framebuffer[i + 3] = c;
+    model->zbuffer[i] = 1.0f;
+    model->zbuffer[i + 1] = 1.0f;
+    model->zbuffer[i + 2] = 1.0f;
+    model->zbuffer[i + 3] = 1.0f;
   }
-  /* Clear any remaining pixels */
+
   for (; i < size; ++i)
   {
-    fb[i] = clear_pixel;
-  }
-
-  /* Clear z-buffer separately */
-  for (i = 0; i < size; ++i)
-  {
-    zb[i] = 1.0f;
+    model->framebuffer[i] = c;
+    model->zbuffer[i] = 1.0f;
   }
 }
 
