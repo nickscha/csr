@@ -144,6 +144,32 @@ CSR_API CSR_INLINE void csr_ndc_to_screen(csr_model *model, float result[3], flo
   result[2] = ndc_pos[2];
 }
 
+CSR_API CSR_INLINE void csr_clear_screen(csr_model *model)
+{
+  int size = model->width * model->height;
+  csr_color c = model->clear_color;
+  
+  int i = 0;
+
+  for (; i + 4 <= size; i += 4)
+  {
+    model->framebuffer[i] = c;
+    model->framebuffer[i + 1] = c;
+    model->framebuffer[i + 2] = c;
+    model->framebuffer[i + 3] = c;
+    model->zbuffer[i] = 1.0f;
+    model->zbuffer[i + 1] = 1.0f;
+    model->zbuffer[i + 2] = 1.0f;
+    model->zbuffer[i + 3] = 1.0f;
+  }
+
+  for (; i < size; ++i)
+  {
+    model->framebuffer[i] = c;
+    model->zbuffer[i] = 1.0f;
+  }
+}
+
 /* Fills a triangle using the barycentric coordinate method with color interpolation. */
 CSR_API CSR_INLINE void csr_draw_triangle(csr_model *model, float p0[3], float p1[3], float p2[3], csr_color c0, csr_color c1, csr_color c2)
 {
@@ -229,16 +255,6 @@ CSR_API CSR_INLINE void csr_draw_triangle(csr_model *model, float p0[3], float p
       w1_start += w1_dy;
       w2_start += w2_dy;
     }
-  }
-}
-
-CSR_API CSR_INLINE void csr_clear_screen(csr_model *model)
-{
-  int i;
-  for (i = 0; i < model->width * model->height; ++i)
-  {
-    model->framebuffer[i] = model->clear_color;
-    model->zbuffer[i] = 1.0f;
   }
 }
 
