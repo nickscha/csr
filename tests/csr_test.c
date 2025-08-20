@@ -12,6 +12,7 @@ LICENSE
 #include <stdlib.h> /* Testing only: malloc/free                                           */
 #include "../csr.h" /* C Software Renderer                                                 */
 #include "vm.h"     /* Linear Algebra Math Library (you can use any library that you want) */
+#include "perf.h"   /* Simple Performance Profiler                                         */
 
 /* Vertex data array with interleaved position and color (RGB) */
 static float vertices[] = {
@@ -61,7 +62,6 @@ static void csr_save_ppm(const char *filename, csr_model *model)
   fwrite(model->framebuffer, sizeof(csr_color), (size_t)(model->width * model->height), fp);
 
   fclose(fp);
-  printf("[csr] saved image: %s\n", filename);
 }
 
 static void csr_test_stack_alloc(void)
@@ -104,8 +104,8 @@ static void csr_test_stack_alloc(void)
     {
       m4x4 model_view_projection = vm_m4x4_mul(projection_view, vm_m4x4_rotate(model_base, vm_radf(5.0f * (float)(frame + 1)), rotation_axis));
 
-      csr_clear_screen(&instance);                                                                    /* Clear Screen Frame and Depth Buffer */
-      csr_render(&instance, vertices, vertices_size, indices, indices_size, model_view_projection.e); /* Render cube */
+      PERF_PROFILE_WITH_NAME({ csr_clear_screen(&instance); }, "csr_clear_screen");
+      PERF_PROFILE_WITH_NAME({ csr_render(&instance, vertices, vertices_size, indices, indices_size, model_view_projection.e); }, "csr_render_frame");
 
       /* Format the filename with the frame number */
       sprintf(filename, "output_%05d.ppm", frame);
@@ -187,7 +187,7 @@ int main(void)
 {
   csr_test_stack_alloc();
   csr_test_cube_scene_with_memory_alloc();
-  
+
   return 0;
 }
 
