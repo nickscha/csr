@@ -46,7 +46,7 @@ static unsigned long indices_size = sizeof(indices) / sizeof(indices[0]);
  * @param filename The name of the output file.
  * @param framebuffer The framebuffer to save.
  */
-static void csr_save_ppm(const char *filename, csr_model *model)
+static void csr_save_ppm(const char *filename, csr_context *model)
 {
   FILE *fp = fopen(filename, "wb");
   if (!fp)
@@ -75,7 +75,7 @@ static void csr_test_stack_alloc(void)
   void *memory = (void *)memory_total;
 
   csr_color clear_color = {40, 40, 40};
-  csr_model instance = {0};
+  csr_context instance = {0};
 
   if (!csr_init_model(&instance, memory, MEMORY_SIZE, WIDTH, HEIGHT, clear_color))
   {
@@ -125,7 +125,7 @@ static void csr_test_cube_scene_with_memory_alloc(void)
   void *memory = malloc(memory_size);
 
   csr_color clear_color = {40, 40, 40};
-  csr_model instance = {0};
+  csr_context instance = {0};
 
   printf("[csr] memory (MB): %10.4f\n", (double)memory_size / 1024.0 / 1024.0);
 

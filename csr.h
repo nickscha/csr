@@ -92,7 +92,7 @@ typedef struct csr_color
 
 } csr_color;
 
-typedef struct csr_model
+typedef struct csr_context
 {
 
   int width;              /* render area width in pixels            */
@@ -101,7 +101,7 @@ typedef struct csr_model
   csr_color *framebuffer; /* memory pointer for framebuffer         */
   float *zbuffer;         /* memory pointer for zbuffer             */
 
-} csr_model;
+} csr_context;
 
 CSR_API CSR_INLINE unsigned long csr_memory_size(int width, int height)
 {
@@ -110,7 +110,7 @@ CSR_API CSR_INLINE unsigned long csr_memory_size(int width, int height)
   );
 }
 
-CSR_API CSR_INLINE int csr_init_model(csr_model *model, void *memory, unsigned long memory_size, int width, int height, csr_color clear_color)
+CSR_API CSR_INLINE int csr_init_model(csr_context *model, void *memory, unsigned long memory_size, int width, int height, csr_color clear_color)
 {
   unsigned long memory_framebuffer_size = (unsigned long)(width * height) * (unsigned long)sizeof(csr_color);
 
@@ -139,14 +139,14 @@ CSR_API CSR_INLINE csr_color csr_init_color(unsigned char r, unsigned char g, un
 }
 
 /* Converts a point from normalized device coordinates(NDC) to screen space. */
-CSR_API CSR_INLINE void csr_ndc_to_screen(csr_model *model, float result[3], float ndc_pos[4])
+CSR_API CSR_INLINE void csr_ndc_to_screen(csr_context *model, float result[3], float ndc_pos[4])
 {
   result[0] = (ndc_pos[0] + 1.0f) * 0.5f * (float)model->width;
   result[1] = (1.0f - ndc_pos[1]) * 0.5f * (float)model->height;
   result[2] = ndc_pos[2];
 }
 
-CSR_API CSR_INLINE void csr_clear_screen(csr_model *model)
+CSR_API CSR_INLINE void csr_clear_screen(csr_context *model)
 {
   int size = model->width * model->height;
   csr_color c = model->clear_color;
@@ -173,7 +173,7 @@ CSR_API CSR_INLINE void csr_clear_screen(csr_model *model)
 }
 
 /* Fills a triangle using the barycentric coordinate method with color interpolation. */
-CSR_API CSR_INLINE void csr_draw_triangle(csr_model *model, float p0[3], float p1[3], float p2[3], csr_color c0, csr_color c1, csr_color c2)
+CSR_API CSR_INLINE void csr_draw_triangle(csr_context *model, float p0[3], float p1[3], float p2[3], csr_color c0, csr_color c1, csr_color c2)
 {
   /* Bounding box for the triangle */
   int min_x = (int)csr_minf(p0[0], csr_minf(p1[0], p2[0]));
@@ -260,7 +260,7 @@ CSR_API CSR_INLINE void csr_draw_triangle(csr_model *model, float p0[3], float p
   }
 }
 
-CSR_API CSR_INLINE void csr_render(csr_model *model, float *vertices, unsigned long num_vertices, int *indices, unsigned long num_indices, float projection_view_model_matrix[16])
+CSR_API CSR_INLINE void csr_render(csr_context *model, float *vertices, unsigned long num_vertices, int *indices, unsigned long num_indices, float projection_view_model_matrix[16])
 {
   unsigned long i;
 

@@ -66,7 +66,7 @@ int main() {
     void *memory = (void *)memory_total;
 
     csr_color clear_color = {40, 40, 40};
-    csr_model instance = {0};
+    csr_context instance = {0};
 
     if (!csr_init_model(&instance, memory, MEMORY_SIZE, WIDTH, HEIGHT, clear_color))
     {
