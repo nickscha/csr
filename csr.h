@@ -129,7 +129,7 @@ CSR_API CSR_INLINE int csr_init_model(csr_model *model, void *memory, unsigned l
   return 1;
 }
 
-CSR_API CSR_INLINE csr_color csr_color_init(unsigned char r, unsigned char g, unsigned char b)
+CSR_API CSR_INLINE csr_color csr_init_color(unsigned char r, unsigned char g, unsigned char b)
 {
   csr_color result;
   result.r = r;
@@ -290,9 +290,9 @@ CSR_API CSR_INLINE void csr_render(csr_model *model, float *vertices, unsigned l
     float pos1[4];
     float pos2[4];
 
-    csr_color color0 = csr_color_init((unsigned char)vertices[i0 * stride + 3], (unsigned char)vertices[i0 * stride + 4], (unsigned char)vertices[i0 * stride + 5]);
-    csr_color color1 = csr_color_init((unsigned char)vertices[i1 * stride + 3], (unsigned char)vertices[i1 * stride + 4], (unsigned char)vertices[i1 * stride + 5]);
-    csr_color color2 = csr_color_init((unsigned char)vertices[i2 * stride + 3], (unsigned char)vertices[i2 * stride + 4], (unsigned char)vertices[i2 * stride + 5]);
+    csr_color color0 = csr_init_color((unsigned char)vertices[i0 * stride + 3], (unsigned char)vertices[i0 * stride + 4], (unsigned char)vertices[i0 * stride + 5]);
+    csr_color color1 = csr_init_color((unsigned char)vertices[i1 * stride + 3], (unsigned char)vertices[i1 * stride + 4], (unsigned char)vertices[i1 * stride + 5]);
+    csr_color color2 = csr_init_color((unsigned char)vertices[i2 * stride + 3], (unsigned char)vertices[i2 * stride + 4], (unsigned char)vertices[i2 * stride + 5]);
 
     /* 1. Vertex Processing (Model, View, Projection) */
     float v0_transformed[4];
