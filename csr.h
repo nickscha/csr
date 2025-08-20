@@ -65,7 +65,7 @@ CSR_API CSR_INLINE void csr_pos_init(float *pos, float x, float y, float z, floa
 CSR_API CSR_INLINE void csr_v4_divf(float result[4], float v[4], float f)
 {
   float inv_f = 1.0f / f;
-  
+
   result[0] = v[0] * inv_f;
   result[1] = v[1] * inv_f;
   result[2] = v[2] * inv_f;
@@ -89,6 +89,7 @@ typedef struct csr_color
   unsigned char r;
   unsigned char g;
   unsigned char b;
+  unsigned char a;
 
 } csr_color;
 
@@ -134,6 +135,7 @@ CSR_API CSR_INLINE csr_color csr_color_init(unsigned char r, unsigned char g, un
   result.r = r;
   result.g = g;
   result.b = b;
+  result.a = 255;
 
   return result;
 }

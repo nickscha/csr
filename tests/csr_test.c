@@ -74,7 +74,7 @@ static void csr_test_stack_alloc(void)
   unsigned char memory_total[MEMORY_SIZE] = {0};
   void *memory = (void *)memory_total;
 
-  csr_color clear_color = {40, 40, 40};
+  csr_color clear_color = {40, 40, 40, 255};
   csr_model instance = {0};
 
   if (!csr_init_model(&instance, memory, MEMORY_SIZE, WIDTH, HEIGHT, clear_color))
@@ -124,7 +124,7 @@ static void csr_test_cube_scene_with_memory_alloc(void)
   unsigned long memory_size = csr_memory_size(width, height);
   void *memory = malloc(memory_size);
 
-  csr_color clear_color = {40, 40, 40};
+  csr_color clear_color = {40, 40, 40, 255};
   csr_model instance = {0};
 
   printf("[csr] memory (MB): %10.4f\n", (double)memory_size / 1024.0 / 1024.0);
