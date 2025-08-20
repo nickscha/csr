@@ -8,12 +8,36 @@ LICENSE
   See end of file for detailed license information.
 
 */
-#include <stdio.h>  /* For file I/O operations (per user request) */
-#include <stdlib.h> /* For malloc() */
+#include <stdio.h>  /* Testing only: write ppm file                                        */
+#include <stdlib.h> /* Testing only: malloc/free                                           */
+#include "../csr.h" /* C Software Renderer                                                 */
+#include "vm.h"     /* Linear Algebra Math Library (you can use any library that you want) */
 
-#include "../csr.h"
+/* Vertex data array with interleaved position and color (RGB) */
+static float vertices[] = {
+    /* Position x,y,z  | Color r,g,b */
+    -0.5f, -0.5f, 0.5f, 255.0f, 0.0f, 0.0f,    /* 0: Red     */
+    0.5f, -0.5f, 0.5f, 0.0f, 255.0f, 0.0f,     /* 1: Green   */
+    0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 255.0f,      /* 2: Blue    */
+    -0.5f, 0.5f, 0.5f, 255.0f, 255.0f, 0.0f,   /* 3: Yellow  */
+    -0.5f, -0.5f, -0.5f, 255.0f, 0.0f, 255.0f, /* 4: Magenta */
+    0.5f, -0.5f, -0.5f, 0.0f, 255.0f, 255.0f,  /* 5: Cyan    */
+    0.5f, 0.5f, -0.5f, 255.0f, 255.0f, 255.0f, /* 6: White   */
+    -0.5f, 0.5f, -0.5f, 128.0f, 128.0f, 128.0f /* 7: Gray    */
+};
 
-#include "vm.h"
+/* Index data counterclockwise to form the triangles of a cube.  */
+static int indices[] = {
+    0, 3, 2, 0, 2, 1, /* Front face (+z normal, facing camera)   */
+    4, 5, 6, 4, 6, 7, /* Back face (-z normal, away from camera) */
+    3, 7, 6, 3, 6, 2, /* Top face (+y normal)                    */
+    0, 1, 5, 0, 5, 4, /* Bottom face (-y normal)                 */
+    1, 2, 6, 1, 6, 5, /* Right face (+x normal)                  */
+    0, 4, 7, 0, 7, 3  /* Left face (-x normal)                   */
+};
+
+static unsigned long vertices_size = sizeof(vertices) / sizeof(vertices[0]);
+static unsigned long indices_size = sizeof(indices) / sizeof(indices[0]);
 
 /*
  * Saves a framebuffer to a PPM image file.
@@ -34,26 +58,28 @@ static void csr_save_ppm(const char *filename, csr_model *model)
   fprintf(fp, "P6\n%d %d\n255\n", model->width, model->height);
 
   /* Pixel data */
-  fwrite(model->framebuffer, sizeof(csr_color), (size_t) (model->width * model->height), fp);
+  fwrite(model->framebuffer, sizeof(csr_color), (size_t)(model->width * model->height), fp);
 
   fclose(fp);
-  printf("Successfully saved image to %s\n", filename);
+  printf("[csr] saved image: %s\n", filename);
 }
 
-int main(void)
+static void csr_test_stack_alloc(void)
 {
-  int width = 800;
-  int height = 600;
+/* Define the render area */
+#define WIDTH 400
+#define HEIGHT 300
+#define MEMORY_SIZE (WIDTH * HEIGHT * sizeof(csr_color)) + (WIDTH * HEIGHT * sizeof(float))
 
-  unsigned long memory_size = csr_memory_size(width, height);
-  void *memory = malloc(memory_size);
+  unsigned char memory_total[MEMORY_SIZE] = {0};
+  void *memory = (void *)memory_total;
 
   csr_color clear_color = {40, 40, 40};
   csr_model instance = {0};
 
-  if (!csr_init_model(&instance, memory, memory_size, width, height, clear_color))
+  if (!csr_init_model(&instance, memory, MEMORY_SIZE, WIDTH, HEIGHT, clear_color))
   {
-    return 1;
+    return;
   }
 
   {
@@ -70,48 +96,57 @@ int main(void)
     v3 rotation_axis = vm_v3(0.5f, 1.0f, 0.0);
     m4x4 model_base = vm_m4x4_translate(vm_m4x4_identity, vm_v3_zero);
 
-    /* Vertex data array with interleaved position and color (RGB) */
-    float vertices[] = {
-        /* Position (x, y, z) */                   /* Color (R, G, B) */
-        -0.5f, -0.5f, 0.5f, 255.0f, 0.0f, 0.0f,    /* 0: Red */
-        0.5f, -0.5f, 0.5f, 0.0f, 255.0f, 0.0f,     /* 1: Green */
-        0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 255.0f,      /* 2: Blue */
-        -0.5f, 0.5f, 0.5f, 255.0f, 255.0f, 0.0f,   /* 3: Yellow */
-        -0.5f, -0.5f, -0.5f, 255.0f, 0.0f, 255.0f, /* 4: Magenta */
-        0.5f, -0.5f, -0.5f, 0.0f, 255.0f, 255.0f,  /* 5: Cyan */
-        0.5f, 0.5f, -0.5f, 255.0f, 255.0f, 255.0f, /* 6: White */
-        -0.5f, 0.5f, -0.5f, 128.0f, 128.0f, 128.0f /* 7: Gray */
-    };
+    char filename[64];
 
-    unsigned long num_floats_in_vertices = sizeof(vertices) / sizeof(vertices[0]);
+    int frame;
 
-    /* Index data to form the triangles of a cube. */
-    int indices[] = {
-        /* Front face (+z normal, facing camera) */
-        0, 3, 2,
-        0, 2, 1,
+    for (frame = 0; frame < 10; ++frame)
+    {
+      m4x4 model_view_projection = vm_m4x4_mul(projection_view, vm_m4x4_rotate(model_base, vm_radf(5.0f * (float)(frame + 1)), rotation_axis));
 
-        /* Back face (-z normal, away from camera) */
-        4, 5, 6,
-        4, 6, 7,
+      csr_clear_screen(&instance);                                                                    /* Clear Screen Frame and Depth Buffer */
+      csr_render(&instance, vertices, vertices_size, indices, indices_size, model_view_projection.e); /* Render cube */
 
-        /* Top face (+y normal) */
-        3, 7, 6,
-        3, 6, 2,
+      /* Format the filename with the frame number */
+      sprintf(filename, "output_%05d.ppm", frame);
 
-        /* Bottom face (-y normal) */
-        0, 1, 5,
-        0, 5, 4,
+      /* Save the result to a PPM file */
+      csr_save_ppm(filename, &instance);
+    }
+  }
+}
 
-        /* Right face (+x normal) */
-        1, 2, 6,
-        1, 6, 5,
+static void csr_test_cube_scene_with_memory_alloc(void)
+{
+  int width = 800;
+  int height = 600;
 
-        /* Left face (-x normal) */
-        0, 4, 7,
-        0, 7, 3};
+  unsigned long memory_size = csr_memory_size(width, height);
+  void *memory = malloc(memory_size);
 
-    unsigned long num_indices = sizeof(indices) / sizeof(indices[0]);
+  csr_color clear_color = {40, 40, 40};
+  csr_model instance = {0};
+
+  printf("[csr] memory (MB): %10.4f\n", (double)memory_size / 1024.0 / 1024.0);
+
+  if (!csr_init_model(&instance, memory, memory_size, width, height, clear_color))
+  {
+    return;
+  }
+
+  {
+    /* Camera setup using your linear algebra library */
+    v3 look_at_pos = vm_v3_zero;
+    v3 up = vm_v3(0.0f, 1.0f, 0.0f);
+    v3 cam_position = vm_v3(0.0f, 0.0f, 2.0f);
+    float cam_fov = 90.0f;
+
+    m4x4 projection = vm_m4x4_perspective(vm_radf(cam_fov), (float)instance.width / (float)instance.height, 0.1f, 1000.0f);
+    m4x4 view = vm_m4x4_lookAt(cam_position, look_at_pos, up);
+    m4x4 projection_view = vm_m4x4_mul(projection, view);
+
+    v3 rotation_axis = vm_v3(0.5f, 1.0f, 0.0);
+    m4x4 model_base = vm_m4x4_translate(vm_m4x4_identity, vm_v3_zero);
 
     char filename[64];
 
@@ -125,17 +160,17 @@ int main(void)
       csr_clear_screen(&instance);
 
       /* Render first cube */
-      csr_render(&instance, vertices, num_floats_in_vertices, indices, num_indices, model_view_projection.e);
+      csr_render(&instance, vertices, vertices_size, indices, indices_size, model_view_projection.e);
 
       /* Render second cube */
       model = vm_m4x4_translate(vm_m4x4_identity, vm_v3(-2.0, 0.0f, -2.0f));
       model_view_projection = vm_m4x4_rotate(vm_m4x4_mul(projection_view, model), vm_radf(-2.5f * (float)(frame + 1)), vm_v3(1.0f, 1.0f, 1.0f));
-      csr_render(&instance, vertices, num_floats_in_vertices, indices, num_indices, model_view_projection.e);
+      csr_render(&instance, vertices, vertices_size, indices, indices_size, model_view_projection.e);
 
       /* Render third cube */
       model = vm_m4x4_translate(vm_m4x4_identity, vm_v3(4.0, 0.0f, -5.0f));
       model_view_projection = vm_m4x4_mul(projection_view, model);
-      csr_render(&instance, vertices, num_floats_in_vertices, indices, num_indices, model_view_projection.e);
+      csr_render(&instance, vertices, vertices_size, indices, indices_size, model_view_projection.e);
 
       /* Format the filename with the frame number */
       sprintf(filename, "output_%05d.ppm", frame);
@@ -146,7 +181,13 @@ int main(void)
   }
 
   free(memory);
+}
 
+int main(void)
+{
+  csr_test_stack_alloc();
+  csr_test_cube_scene_with_memory_alloc();
+  
   return 0;
 }
 
