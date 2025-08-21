@@ -117,6 +117,15 @@ int main() {
 }
 ```
 
+### Switch Row/Column major layout
+By default the m4x4 (Matrix 4x4) uses a **column major** order for storing data (used by OpenGL).
+If you want to change to a row major order you can use the following define before including the header.
+
+```C
+#define CSR_M4X4_ROW_MAJOR_ORDER
+#include "csr.h"
+```
+
 ## Run Example: nostdlib, freestsanding
 
 In this repo you will find the "examples/csr_win32_nostdlib.c" with the corresponding "build.bat" file which

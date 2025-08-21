@@ -31,6 +31,19 @@ LICENSE
 #endif
 
 /* #############################################################################
+ * # MATRIX LAYOUT
+ * #############################################################################
+ */
+/* Define CSR_MATRIX_ROW_MAJOR before including this file to use row-major order.
+ * By default, the library uses column-major order (OpenGL standard).
+ */
+#ifdef CSR_MATRIX_ROW_MAJOR
+#define CSR_M4X4_AT(row, col) ((row) * 4 + (col))
+#else /* Column Major layout */
+#define CSR_M4X4_AT(row, col) ((col) * 4 + (row))
+#endif
+
+/* #############################################################################
  * # MATH Functions
  * #############################################################################
  */
@@ -72,12 +85,13 @@ CSR_API CSR_INLINE void csr_v4_divf(float result[4], float v[4], float f)
   result[3] = v[3] * inv_f;
 }
 
+/* Multiplies a 4x4 matrix by a 4D vector, respecting the defined matrix layout. */
 CSR_API CSR_INLINE void csr_m4x4_mul_v4(float result[4], float m[16], float v[4])
 {
-  result[0] = m[0] * v[0] + m[4] * v[1] + m[8] * v[2] + m[12] * v[3];
-  result[1] = m[1] * v[0] + m[5] * v[1] + m[9] * v[2] + m[13] * v[3];
-  result[2] = m[2] * v[0] + m[6] * v[1] + m[10] * v[2] + m[14] * v[3];
-  result[3] = m[3] * v[0] + m[7] * v[1] + m[11] * v[2] + m[15] * v[3];
+  result[0] = m[CSR_M4X4_AT(0, 0)] * v[0] + m[CSR_M4X4_AT(0, 1)] * v[1] + m[CSR_M4X4_AT(0, 2)] * v[2] + m[CSR_M4X4_AT(0, 3)] * v[3];
+  result[1] = m[CSR_M4X4_AT(1, 0)] * v[0] + m[CSR_M4X4_AT(1, 1)] * v[1] + m[CSR_M4X4_AT(1, 2)] * v[2] + m[CSR_M4X4_AT(1, 3)] * v[3];
+  result[2] = m[CSR_M4X4_AT(2, 0)] * v[0] + m[CSR_M4X4_AT(2, 1)] * v[1] + m[CSR_M4X4_AT(2, 2)] * v[2] + m[CSR_M4X4_AT(2, 3)] * v[3];
+  result[3] = m[CSR_M4X4_AT(3, 0)] * v[0] + m[CSR_M4X4_AT(3, 1)] * v[1] + m[CSR_M4X4_AT(3, 2)] * v[2] + m[CSR_M4X4_AT(3, 3)] * v[3];
 }
 
 /* #############################################################################
