@@ -92,6 +92,17 @@ typedef struct csr_color
 
 } csr_color;
 
+typedef enum csr_culling_mode
+{
+
+  CSR_CULLING_DISABLED = 0,      /* Default is no culling                                   */
+  CSR_CULLING_CCW_BACKFACE = 1,  /* Counter-clockwise winding order, back faces are culled  */
+  CSR_CULLING_CCW_FRONTFACE = 2, /* Counter-clockwise winding order, front faces are culled */
+  CSR_CULLING_CW_BACKFACE = 3,   /* Clockwise winding order, back faces are culled          */
+  CSR_CULLING_CW_FRONTFACE = 4   /* Clockwise winding order, front faces are culled         */
+
+} csr_culling_mode;
+
 typedef struct csr_context
 {
 
@@ -260,7 +271,7 @@ CSR_API CSR_INLINE void csr_draw_triangle(csr_context *context, float p0[3], flo
   }
 }
 
-CSR_API CSR_INLINE void csr_render(csr_context *context, int stride, float *vertices, unsigned long num_vertices, int *indices, unsigned long num_indices, float projection_view_model_matrix[16])
+CSR_API CSR_INLINE void csr_render(csr_context *context, csr_culling_mode culling_mode, int stride, float *vertices, unsigned long num_vertices, int *indices, unsigned long num_indices, float projection_view_model_matrix[16])
 {
   unsigned long i;
 
@@ -319,8 +330,8 @@ CSR_API CSR_INLINE void csr_render(csr_context *context, int stride, float *vert
     csr_ndc_to_screen(context, v1_screen, v1_ndc);
     csr_ndc_to_screen(context, v2_screen, v2_ndc);
 
-    /* 4. CCW-Front Backface culling */
-    if (stride == 6)
+    /* 4. Culling based on winding order */
+    if (culling_mode != CSR_CULLING_DISABLED)
     {
       float ax = v1_screen[0] - v0_screen[0];
       float ay = v1_screen[1] - v0_screen[1];
@@ -328,7 +339,17 @@ CSR_API CSR_INLINE void csr_render(csr_context *context, int stride, float *vert
       float by = v2_screen[1] - v0_screen[1];
       float face = ax * by - ay * bx;
 
-      if (face <= 0.0f)
+      int is_ccw_face = (face >= 0.0f);
+      int is_cw_face = (face <= 0.0f);
+
+      int should_cull = 0;
+
+      should_cull |= (culling_mode == CSR_CULLING_CCW_BACKFACE) & is_cw_face;
+      should_cull |= (culling_mode == CSR_CULLING_CCW_FRONTFACE) & is_ccw_face;
+      should_cull |= (culling_mode == CSR_CULLING_CW_BACKFACE) & is_ccw_face;
+      should_cull |= (culling_mode == CSR_CULLING_CW_FRONTFACE) & is_cw_face;
+
+      if (should_cull)
       {
         continue;
       }
