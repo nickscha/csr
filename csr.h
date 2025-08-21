@@ -289,10 +289,6 @@ CSR_API CSR_INLINE void csr_render(csr_context *context, csr_culling_mode cullin
     float pos1[4];
     float pos2[4];
 
-    csr_color color0 = stride == 3 ? csr_init_color(255, 50, 50) : csr_init_color((unsigned char)vertices[i0 * stride + 3], (unsigned char)vertices[i0 * stride + 4], (unsigned char)vertices[i0 * stride + 5]);
-    csr_color color1 = stride == 3 ? csr_init_color(50, 255, 50) : csr_init_color((unsigned char)vertices[i1 * stride + 3], (unsigned char)vertices[i1 * stride + 4], (unsigned char)vertices[i1 * stride + 5]);
-    csr_color color2 = stride == 3 ? csr_init_color(50, 50, 255) : csr_init_color((unsigned char)vertices[i2 * stride + 3], (unsigned char)vertices[i2 * stride + 4], (unsigned char)vertices[i2 * stride + 5]);
-
     /* 1. Vertex Processing (Model, View, Projection) */
     float v0_transformed[4];
     float v1_transformed[4];
@@ -356,7 +352,13 @@ CSR_API CSR_INLINE void csr_render(csr_context *context, csr_culling_mode cullin
     }
 
     /* 5. Rasterization & Depth Testing */
-    csr_draw_triangle(context, v0_screen, v1_screen, v2_screen, color0, color1, color2);
+    {
+      csr_color color0 = stride == 3 ? csr_init_color(255, 50, 50) : csr_init_color((unsigned char)vertices[i0 * stride + 3], (unsigned char)vertices[i0 * stride + 4], (unsigned char)vertices[i0 * stride + 5]);
+      csr_color color1 = stride == 3 ? csr_init_color(50, 255, 50) : csr_init_color((unsigned char)vertices[i1 * stride + 3], (unsigned char)vertices[i1 * stride + 4], (unsigned char)vertices[i1 * stride + 5]);
+      csr_color color2 = stride == 3 ? csr_init_color(50, 50, 255) : csr_init_color((unsigned char)vertices[i2 * stride + 3], (unsigned char)vertices[i2 * stride + 4], (unsigned char)vertices[i2 * stride + 5]);
+
+      csr_draw_triangle(context, v0_screen, v1_screen, v2_screen, color0, color1, color2);
+    }
   }
 }
 
