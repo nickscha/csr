@@ -10,9 +10,8 @@ For more information please look at the "csr.h" file or take a look at the "exam
 > [!WARNING]
 > THIS PROJECT IS A WORK IN PROGRESS! ANYTHING CAN CHANGE AT ANY MOMENT WITHOUT ANY NOTICE! USE THIS PROJECT AT YOUR OWN RISK!
 
-<p align="center">
 <a href="https://github.com/nickscha/csr"><img src="assets/csr.gif"></a>
-</p>
+<a href="https://github.com/nickscha/csr"><img src="assets/csr_voxel_head.gif"></a>
 
 ## Quick Start
 

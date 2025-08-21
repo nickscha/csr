@@ -13,10 +13,13 @@ ffmpeg -y -framerate 30 -i stack_%%05d.ppm -c:v libx264 -pix_fmt yuv420p stack.m
 ffmpeg -y -framerate 30 -i cube_%%05d.ppm -c:v libx264 -pix_fmt yuv420p cube.mp4
 ffmpeg -y -framerate 30 -i teddy_%%05d.ppm -c:v libx264 -pix_fmt yuv420p teddy.mp4
 ffmpeg -y -framerate 30 -i voxel_teddy_%%05d.ppm -c:v libx264 -pix_fmt yuv420p voxel_teddy.mp4
+ffmpeg -y -framerate 30 -i voxel_head_%%05d.ppm -c:v libx264 -pix_fmt yuv420p voxel_head.mp4
 
 ffmpeg -y -i stack.mp4 -filter_complex "[0:v] fps=10,scale=360:-1:flags=lanczos,split [a][b];[a] palettegen [p];[b][p] paletteuse" stack.gif
 ffmpeg -y -i cube.mp4 -filter_complex "[0:v] fps=10,scale=360:-1:flags=lanczos,split [a][b];[a] palettegen [p];[b][p] paletteuse" cube.gif
 ffmpeg -y -i teddy.mp4 -filter_complex "[0:v] fps=10,scale=360:-1:flags=lanczos,split [a][b];[a] palettegen [p];[b][p] paletteuse" teddy.gif
 ffmpeg -y -i voxel_teddy.mp4 -filter_complex "[0:v] fps=10,scale=360:-1:flags=lanczos,split [a][b];[a] palettegen [p];[b][p] paletteuse" voxel_teddy.gif
+ffmpeg -y -i voxel_head.mp4 -filter_complex "[0:v] fps=10,scale=360:-1:flags=lanczos,split [a][b];[a] palettegen [p];[b][p] paletteuse" voxel_head.gif
+
 
 rm *.ppm
