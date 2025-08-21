@@ -219,15 +219,24 @@ CSR_API CSR_INLINE void csr_draw_triangle(csr_context *context, float p0[3], flo
     float w2_dy = -w0_dy - w1_dy;
 
     /* Initialize barycentric coordinates at the top-left of the bounding box */
-    float w0_start = (p1[1] - p2[1]) * ((float)min_x - p2[0]) + (p2[0] - p1[0]) * ((float)min_y - p2[1]);
-    float w1_start = (p2[1] - p0[1]) * ((float)min_x - p0[0]) + (p0[0] - p2[0]) * ((float)min_y - p0[1]);
-    float w2_start = area - w0_start - w1_start;
+    float w0_start = ((p1[1] - p2[1]) * ((float)min_x - p2[0]) + (p2[0] - p1[0]) * ((float)min_y - p2[1])) * inv_area;
+    float w1_start = ((p2[1] - p0[1]) * ((float)min_x - p0[0]) + (p0[0] - p2[0]) * ((float)min_y - p0[1])) * inv_area;
+    float w2_start = 1.0f - w0_start - w1_start;
+
+    /* Pre-calculate color channel differences for interpolation */
+    float dr_dx = (c1.r - c0.r) * w1_dx + (c2.r - c0.r) * w2_dx;
+    float dg_dx = (c1.g - c0.g) * w1_dx + (c2.g - c0.g) * w2_dx;
+    float db_dx = (c1.b - c0.b) * w1_dx + (c2.b - c0.b) * w2_dx;
+
+    float dr_dy = (c1.r - c0.r) * w1_dy + (c2.r - c0.r) * w2_dy;
+    float dg_dy = (c1.g - c0.g) * w1_dy + (c2.g - c0.g) * w2_dy;
+    float db_dy = (c1.b - c0.b) * w1_dy + (c2.b - c0.b) * w2_dy;
+
+    float r_start = c0.r + (c1.r - c0.r) * w1_start + (c2.r - c0.r) * w2_start;
+    float g_start = c0.g + (c1.g - c0.g) * w1_start + (c2.g - c0.g) * w2_start;
+    float b_start = c0.b + (c1.b - c0.b) * w1_start + (c2.b - c0.b) * w2_start;
 
     int x, y;
-
-    w0_start *= inv_area;
-    w1_start *= inv_area;
-    w2_start *= inv_area;
 
     for (y = min_y; y <= max_y; ++y)
     {
@@ -235,38 +244,50 @@ CSR_API CSR_INLINE void csr_draw_triangle(csr_context *context, float p0[3], flo
       float w1 = w1_start;
       float w2 = w2_start;
 
+      float current_r = r_start;
+      float current_g = g_start;
+      float current_b = b_start;
+
+      int index_row_start = y * context->width + min_x;
+
       for (x = min_x; x <= max_x; ++x)
       {
         if (w0 >= 0.0f && w1 >= 0.0f && w2 >= 0.0f)
         {
-          /* Interpolate Z-depth and color using w values */
+          /* Interpolate Z-depth using w values */
           float z = p0[2] * w0 + p1[2] * w1 + p2[2] * w2;
 
-          int index = y * context->width + x;
+          int index = index_row_start + (x - min_x);
 
           /* Depth testing: only draw if the new pixel is closer than the existing one */
           if (z < context->zbuffer[index])
           {
             csr_color pixel_color;
-            pixel_color.r = (unsigned char)(c0.r * w0 + c1.r * w1 + c2.r * w2);
-            pixel_color.g = (unsigned char)(c0.g * w0 + c1.g * w1 + c2.g * w2);
-            pixel_color.b = (unsigned char)(c0.b * w0 + c1.b * w1 + c2.b * w2);
+            pixel_color.r = (unsigned char)current_r;
+            pixel_color.g = (unsigned char)current_g;
+            pixel_color.b = (unsigned char)current_b;
 
             context->framebuffer[index] = pixel_color;
             context->zbuffer[index] = z;
           }
         }
 
-        /* Increment barycentric coordinates with pre-calculated deltas */
+        /* Increment barycentric coordinates and colors with pre-calculated deltas */
         w0 += w0_dx;
         w1 += w1_dx;
         w2 += w2_dx;
+        current_r += dr_dx;
+        current_g += dg_dx;
+        current_b += db_dx;
       }
 
-      /* Reset w values for the start of the next row */
+      /* Reset w values and colors for the start of the next row */
       w0_start += w0_dy;
       w1_start += w1_dy;
       w2_start += w2_dy;
+      r_start += dr_dy;
+      g_start += dg_dy;
+      b_start += db_dy;
     }
   }
 }
