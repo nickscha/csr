@@ -110,7 +110,7 @@ CSR_API CSR_INLINE unsigned long csr_memory_size(int width, int height)
   );
 }
 
-CSR_API CSR_INLINE int csr_init_model(csr_context *model, void *memory, unsigned long memory_size, int width, int height, csr_color clear_color)
+CSR_API CSR_INLINE int csr_init_model(csr_context *context, void *memory, unsigned long memory_size, int width, int height, csr_color clear_color)
 {
   unsigned long memory_framebuffer_size = (unsigned long)(width * height) * (unsigned long)sizeof(csr_color);
 
@@ -119,11 +119,11 @@ CSR_API CSR_INLINE int csr_init_model(csr_context *model, void *memory, unsigned
     return 0;
   }
 
-  model->width = width;
-  model->height = height;
-  model->clear_color = clear_color;
-  model->framebuffer = (csr_color *)memory;
-  model->zbuffer = (float *)((char *)memory + memory_framebuffer_size);
+  context->width = width;
+  context->height = height;
+  context->clear_color = clear_color;
+  context->framebuffer = (csr_color *)memory;
+  context->zbuffer = (float *)((char *)memory + memory_framebuffer_size);
 
   return 1;
 }
@@ -139,41 +139,41 @@ CSR_API CSR_INLINE csr_color csr_init_color(unsigned char r, unsigned char g, un
 }
 
 /* Converts a point from normalized device coordinates(NDC) to screen space. */
-CSR_API CSR_INLINE void csr_ndc_to_screen(csr_context *model, float result[3], float ndc_pos[4])
+CSR_API CSR_INLINE void csr_ndc_to_screen(csr_context *context, float result[3], float ndc_pos[4])
 {
-  result[0] = (ndc_pos[0] + 1.0f) * 0.5f * (float)model->width;
-  result[1] = (1.0f - ndc_pos[1]) * 0.5f * (float)model->height;
+  result[0] = (ndc_pos[0] + 1.0f) * 0.5f * (float)context->width;
+  result[1] = (1.0f - ndc_pos[1]) * 0.5f * (float)context->height;
   result[2] = ndc_pos[2];
 }
 
-CSR_API CSR_INLINE void csr_clear_screen(csr_context *model)
+CSR_API CSR_INLINE void csr_clear_screen(csr_context *context)
 {
-  int size = model->width * model->height;
-  csr_color c = model->clear_color;
+  int size = context->width * context->height;
+  csr_color c = context->clear_color;
 
   int i = 0;
 
   for (; i + 4 <= size; i += 4)
   {
-    model->framebuffer[i] = c;
-    model->framebuffer[i + 1] = c;
-    model->framebuffer[i + 2] = c;
-    model->framebuffer[i + 3] = c;
-    model->zbuffer[i] = 1.0f;
-    model->zbuffer[i + 1] = 1.0f;
-    model->zbuffer[i + 2] = 1.0f;
-    model->zbuffer[i + 3] = 1.0f;
+    context->framebuffer[i] = c;
+    context->framebuffer[i + 1] = c;
+    context->framebuffer[i + 2] = c;
+    context->framebuffer[i + 3] = c;
+    context->zbuffer[i] = 1.0f;
+    context->zbuffer[i + 1] = 1.0f;
+    context->zbuffer[i + 2] = 1.0f;
+    context->zbuffer[i + 3] = 1.0f;
   }
 
   for (; i < size; ++i)
   {
-    model->framebuffer[i] = c;
-    model->zbuffer[i] = 1.0f;
+    context->framebuffer[i] = c;
+    context->zbuffer[i] = 1.0f;
   }
 }
 
 /* Fills a triangle using the barycentric coordinate method with color interpolation. */
-CSR_API CSR_INLINE void csr_draw_triangle(csr_context *model, float p0[3], float p1[3], float p2[3], csr_color c0, csr_color c1, csr_color c2)
+CSR_API CSR_INLINE void csr_draw_triangle(csr_context *context, float p0[3], float p1[3], float p2[3], csr_color c0, csr_color c1, csr_color c2)
 {
   /* Bounding box for the triangle */
   int min_x = (int)csr_minf(p0[0], csr_minf(p1[0], p2[0]));
@@ -192,8 +192,8 @@ CSR_API CSR_INLINE void csr_draw_triangle(csr_context *model, float p0[3], float
   /* Clamp bounding box to screen dimensions */
   min_x = csr_maxi(0, min_x);
   min_y = csr_maxi(0, min_y);
-  max_x = csr_mini(model->width - 1, max_x);
-  max_y = csr_mini(model->height - 1, max_y);
+  max_x = csr_mini(context->width - 1, max_x);
+  max_y = csr_mini(context->height - 1, max_y);
 
   {
     float inv_area = 1.0f / area;
@@ -231,18 +231,18 @@ CSR_API CSR_INLINE void csr_draw_triangle(csr_context *model, float p0[3], float
           /* Interpolate Z-depth and color using w values */
           float z = p0[2] * w0 + p1[2] * w1 + p2[2] * w2;
 
-          int index = y * model->width + x;
+          int index = y * context->width + x;
 
           /* Depth testing: only draw if the new pixel is closer than the existing one */
-          if (z < model->zbuffer[index])
+          if (z < context->zbuffer[index])
           {
             csr_color pixel_color;
             pixel_color.r = (unsigned char)(c0.r * w0 + c1.r * w1 + c2.r * w2);
             pixel_color.g = (unsigned char)(c0.g * w0 + c1.g * w1 + c2.g * w2);
             pixel_color.b = (unsigned char)(c0.b * w0 + c1.b * w1 + c2.b * w2);
 
-            model->framebuffer[index] = pixel_color;
-            model->zbuffer[index] = z;
+            context->framebuffer[index] = pixel_color;
+            context->zbuffer[index] = z;
           }
         }
 
@@ -260,12 +260,9 @@ CSR_API CSR_INLINE void csr_draw_triangle(csr_context *model, float p0[3], float
   }
 }
 
-CSR_API CSR_INLINE void csr_render(csr_context *model, float *vertices, unsigned long num_vertices, int *indices, unsigned long num_indices, float projection_view_model_matrix[16])
+CSR_API CSR_INLINE void csr_render(csr_context *context, int stride, float *vertices, unsigned long num_vertices, int *indices, unsigned long num_indices, float projection_view_model_matrix[16])
 {
   unsigned long i;
-
-  /* Each vertex has 6 floats (3 for position, 3 for color) */
-  int stride = 6;
 
   (void)num_vertices;
 
@@ -281,9 +278,9 @@ CSR_API CSR_INLINE void csr_render(csr_context *model, float *vertices, unsigned
     float pos1[4];
     float pos2[4];
 
-    csr_color color0 = csr_init_color((unsigned char)vertices[i0 * stride + 3], (unsigned char)vertices[i0 * stride + 4], (unsigned char)vertices[i0 * stride + 5]);
-    csr_color color1 = csr_init_color((unsigned char)vertices[i1 * stride + 3], (unsigned char)vertices[i1 * stride + 4], (unsigned char)vertices[i1 * stride + 5]);
-    csr_color color2 = csr_init_color((unsigned char)vertices[i2 * stride + 3], (unsigned char)vertices[i2 * stride + 4], (unsigned char)vertices[i2 * stride + 5]);
+    csr_color color0 = stride == 3 ? csr_init_color(255, 50, 50) : csr_init_color((unsigned char)vertices[i0 * stride + 3], (unsigned char)vertices[i0 * stride + 4], (unsigned char)vertices[i0 * stride + 5]);
+    csr_color color1 = stride == 3 ? csr_init_color(50, 255, 50) : csr_init_color((unsigned char)vertices[i1 * stride + 3], (unsigned char)vertices[i1 * stride + 4], (unsigned char)vertices[i1 * stride + 5]);
+    csr_color color2 = stride == 3 ? csr_init_color(50, 50, 255) : csr_init_color((unsigned char)vertices[i2 * stride + 3], (unsigned char)vertices[i2 * stride + 4], (unsigned char)vertices[i2 * stride + 5]);
 
     /* 1. Vertex Processing (Model, View, Projection) */
     float v0_transformed[4];
@@ -318,11 +315,12 @@ CSR_API CSR_INLINE void csr_render(csr_context *model, float *vertices, unsigned
     csr_v4_divf(v2_ndc, v2_transformed, v2_transformed[3]);
 
     /* 3. Viewport Transform (NDC to Screen Space) */
-    csr_ndc_to_screen(model, v0_screen, v0_ndc);
-    csr_ndc_to_screen(model, v1_screen, v1_ndc);
-    csr_ndc_to_screen(model, v2_screen, v2_ndc);
+    csr_ndc_to_screen(context, v0_screen, v0_ndc);
+    csr_ndc_to_screen(context, v1_screen, v1_ndc);
+    csr_ndc_to_screen(context, v2_screen, v2_ndc);
 
     /* 4. CCW-Front Backface culling */
+    if (stride == 6)
     {
       float ax = v1_screen[0] - v0_screen[0];
       float ay = v1_screen[1] - v0_screen[1];
@@ -337,7 +335,7 @@ CSR_API CSR_INLINE void csr_render(csr_context *model, float *vertices, unsigned
     }
 
     /* 5. Rasterization & Depth Testing */
-    csr_draw_triangle(model, v0_screen, v1_screen, v2_screen, color0, color1, color2);
+    csr_draw_triangle(context, v0_screen, v1_screen, v2_screen, color0, color1, color2);
   }
 }
 
