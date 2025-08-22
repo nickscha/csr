@@ -130,8 +130,10 @@ typedef struct csr_context
 
 CSR_API CSR_INLINE unsigned long csr_memory_size(int width, int height)
 {
-  return (unsigned long)(width * height * (int)sizeof(csr_color) + /* framebuffer size */
-                         width * height * (int)sizeof(float)       /* zbuffer size     */
+  unsigned long area = (unsigned long)(width * height);
+
+  return (unsigned long)(area * (unsigned long)sizeof(csr_color) + /* framebuffer size */
+                         area * (unsigned long)sizeof(float)       /* zbuffer size     */
   );
 }
 
