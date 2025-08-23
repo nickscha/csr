@@ -173,7 +173,7 @@ CSR_API CSR_INLINE void csr_ndc_to_screen(csr_context *context, float result[3],
   result[2] = ndc_pos[2];
 }
 
-CSR_API CSR_INLINE void csr_clear_screen(csr_context *context)
+CSR_API CSR_INLINE void csr_render_clear_screen(csr_context *context)
 {
   int size = context->width * context->height;
   csr_color c = context->clear_color;
