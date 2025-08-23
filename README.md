@@ -102,7 +102,14 @@ int main() {
             csr_clear_screen(&instance);                                                                   
 
             /* Render cube */ 
-            csr_render(&instance, 6, vertices, vertices_size, indices, indices_size, model_view_projection.e);
+            csr_render(
+                &instance, 
+                CSR_RENDER_SOLID, 
+                CSR_CULLING_CCW_BACKFACE, 6, 
+                vertices, vertices_size, 
+                indices, indices_size, 
+                model_view_projection.e
+            );
 
             /* Afterwards you can write the instance.framebuffer to a screen or write to a file (like ppm format).
             

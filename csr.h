@@ -106,6 +106,13 @@ typedef struct csr_color
 
 } csr_color;
 
+typedef enum csr_render_mode
+{
+  CSR_RENDER_SOLID = 0,
+  CSR_RENDER_WIREFRAME = 1
+
+} csr_render_mode;
+
 typedef enum csr_culling_mode
 {
 
@@ -196,6 +203,57 @@ CSR_API CSR_INLINE void csr_render_clear_screen(csr_context *context)
   {
     context->framebuffer[i] = c;
     context->zbuffer[i] = 1.0f;
+  }
+}
+
+/* Draws a line with depth testing using Bresenham's algorithm. */
+CSR_API CSR_INLINE void csr_draw_line(csr_context *context, float p0[3], float p1[3], csr_color color)
+{
+  int x0 = (int)p0[0], y0 = (int)p0[1];
+  int x1 = (int)p1[0], y1 = (int)p1[1];
+  float z0 = p0[2], z1 = p1[2];
+
+  int dx = abs(x1 - x0), sx = x0 < x1 ? 1 : -1;
+  int dy = -abs(y1 - y0), sy = y0 < y1 ? 1 : -1;
+  int err = dx + dy, e2;
+  float z = z0;
+  float dz = (float)(dx > -dy ? dx : -dy);
+
+  dz = (dz == 0) ? 0.0f : (z1 - z0) / dz;
+
+  while (1)
+  {
+    if (x0 >= 0 && x0 < context->width && y0 >= 0 && y0 < context->height)
+    {
+      int index = y0 * context->width + x0;
+
+      if (z < context->zbuffer[index])
+      {
+        context->framebuffer[index] = color;
+        context->zbuffer[index] = z;
+      }
+    }
+
+    if (x0 == x1 && y0 == y1)
+    {
+      break;
+    }
+
+    e2 = 2 * err;
+
+    if (e2 >= dy)
+    {
+      err += dy;
+      x0 += sx;
+      z += dz;
+    }
+
+    if (e2 <= dx)
+    {
+      err += dx;
+      y0 += sy;
+      z += dz;
+    }
   }
 }
 
@@ -308,7 +366,7 @@ CSR_API CSR_INLINE void csr_draw_triangle(csr_context *context, float p0[3], flo
   }
 }
 
-CSR_API CSR_INLINE void csr_render(csr_context *context, csr_culling_mode culling_mode, int stride, float *vertices, unsigned long num_vertices, int *indices, unsigned long num_indices, float projection_view_model_matrix[16])
+CSR_API CSR_INLINE void csr_render(csr_context *context, csr_render_mode render_mode, csr_culling_mode culling_mode, int stride, float *vertices, unsigned long num_vertices, int *indices, unsigned long num_indices, float projection_view_model_matrix[16])
 {
   unsigned long i;
 
@@ -389,12 +447,21 @@ CSR_API CSR_INLINE void csr_render(csr_context *context, csr_culling_mode cullin
     }
 
     /* 5. Rasterization & Depth Testing */
+    if (render_mode == CSR_RENDER_SOLID)
     {
       csr_color color0 = stride == 3 ? csr_init_color(255, 50, 50) : csr_init_color((unsigned char)vertices[i0 * stride + 3], (unsigned char)vertices[i0 * stride + 4], (unsigned char)vertices[i0 * stride + 5]);
       csr_color color1 = stride == 3 ? csr_init_color(50, 255, 50) : csr_init_color((unsigned char)vertices[i1 * stride + 3], (unsigned char)vertices[i1 * stride + 4], (unsigned char)vertices[i1 * stride + 5]);
       csr_color color2 = stride == 3 ? csr_init_color(50, 50, 255) : csr_init_color((unsigned char)vertices[i2 * stride + 3], (unsigned char)vertices[i2 * stride + 4], (unsigned char)vertices[i2 * stride + 5]);
 
       csr_draw_triangle(context, v0_screen, v1_screen, v2_screen, color0, color1, color2);
+    }
+    else
+    {
+      csr_color color0 = stride == 3 ? csr_init_color(255, 50, 50) : csr_init_color((unsigned char)vertices[i0 * stride + 3], (unsigned char)vertices[i0 * stride + 4], (unsigned char)vertices[i0 * stride + 5]);
+
+      csr_draw_line(context, v0_screen, v1_screen, color0);
+      csr_draw_line(context, v1_screen, v2_screen, color0);
+      csr_draw_line(context, v2_screen, v0_screen, color0);
     }
   }
 }

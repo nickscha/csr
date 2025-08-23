@@ -113,7 +113,7 @@ static void csr_test_stack_alloc(void)
       m4x4 model_view_projection = vm_m4x4_mul(projection_view, vm_m4x4_rotate(model_base, vm_radf(5.0f * (float)(frame + 1)), rotation_axis));
 
       PERF_PROFILE_WITH_NAME({ csr_render_clear_screen(&instance); }, "csr_clear_screen");
-      PERF_PROFILE_WITH_NAME({ csr_render(&instance, CSR_CULLING_CCW_BACKFACE, 6, vertices, vertices_size, indices, indices_size, model_view_projection.e); }, "csr_render_frame");
+      PERF_PROFILE_WITH_NAME({ csr_render(&instance, CSR_RENDER_SOLID, CSR_CULLING_CCW_BACKFACE, 6, vertices, vertices_size, indices, indices_size, model_view_projection.e); }, "csr_render_frame");
 
       /* Save the result to a PPM file */
       csr_save_ppm("stack_%05d.ppm", frame, &instance);
@@ -163,17 +163,17 @@ static void csr_test_cube_scene_with_memory_alloc(void)
       csr_render_clear_screen(&instance);
 
       /* Render first cube */
-      csr_render(&instance, CSR_CULLING_CCW_BACKFACE, 6, vertices, vertices_size, indices, indices_size, model_view_projection.e);
+      csr_render(&instance, CSR_RENDER_WIREFRAME, CSR_CULLING_DISABLED, 6, vertices, vertices_size, indices, indices_size, model_view_projection.e);
 
       /* Render second cube */
       model = vm_m4x4_translate(vm_m4x4_identity, vm_v3(-2.0, 0.0f, -2.0f));
       model_view_projection = vm_m4x4_rotate(vm_m4x4_mul(projection_view, model), vm_radf(-2.5f * (float)(frame + 1)), vm_v3(1.0f, 1.0f, 1.0f));
-      csr_render(&instance, CSR_CULLING_CCW_BACKFACE, 6, vertices, vertices_size, indices, indices_size, model_view_projection.e);
+      csr_render(&instance,CSR_RENDER_SOLID,  CSR_CULLING_CCW_BACKFACE, 6, vertices, vertices_size, indices, indices_size, model_view_projection.e);
 
       /* Render third cube */
       model = vm_m4x4_translate(vm_m4x4_identity, vm_v3(4.0, 0.0f, -5.0f));
       model_view_projection = vm_m4x4_mul(projection_view, model);
-      csr_render(&instance, CSR_CULLING_CCW_BACKFACE, 6, vertices, vertices_size, indices, indices_size, model_view_projection.e);
+      csr_render(&instance, CSR_RENDER_SOLID, CSR_CULLING_CCW_BACKFACE, 6, vertices, vertices_size, indices, indices_size, model_view_projection.e);
 
       /* Save the result to a PPM file */
       csr_save_ppm("cube_%05d.ppm", frame, &instance);
@@ -223,7 +223,7 @@ static void csr_test_teddy(void)
       m4x4 model_view_projection = vm_m4x4_mul(projection_view, model);
 
       csr_render_clear_screen(&instance);
-      csr_render(&instance, CSR_CULLING_DISABLED, 3, teddy_vertices, teddy_vertices_size, teddy_indices, teddy_indices_size, model_view_projection.e);
+      csr_render(&instance,CSR_RENDER_SOLID,  CSR_CULLING_DISABLED, 3, teddy_vertices, teddy_vertices_size, teddy_indices, teddy_indices_size, model_view_projection.e);
       csr_save_ppm("teddy_%05d.ppm", frame, &instance);
     }
   }
@@ -302,7 +302,7 @@ void csr_test_voxelize_teddy(void)
         model = vm_transformation_matrix(&child);
         model_view_projection = vm_m4x4_mul(projection_view, model);
 
-        csr_render(&instance, CSR_CULLING_DISABLED, 3, teddy_vertices, teddy_vertices_size, teddy_indices, teddy_indices_size, model_view_projection.e);
+        csr_render(&instance,CSR_RENDER_SOLID,  CSR_CULLING_DISABLED, 3, teddy_vertices, teddy_vertices_size, teddy_indices, teddy_indices_size, model_view_projection.e);
       }
 
       /* Render voxelized teddy */
@@ -331,7 +331,7 @@ void csr_test_voxelize_teddy(void)
               model_view_projection = vm_m4x4_mul(projection_view, model);
 
               /* Render voxel cube */
-              csr_render(&instance, CSR_CULLING_CCW_BACKFACE, 6, vertices, vertices_size, indices, indices_size, model_view_projection.e);
+              csr_render(&instance, CSR_RENDER_SOLID, CSR_CULLING_CCW_BACKFACE, 6, vertices, vertices_size, indices, indices_size, model_view_projection.e);
             }
           }
         }
@@ -430,7 +430,7 @@ void csr_test_voxelize_head(void)
               model_view_projection = vm_m4x4_mul(projection_view, model);
 
               /* Render voxel cube */
-              csr_render(&instance, CSR_CULLING_CCW_BACKFACE, 6, vertices, vertices_size, indices, indices_size, model_view_projection.e);
+              csr_render(&instance, CSR_RENDER_SOLID, CSR_CULLING_CCW_BACKFACE, 6, vertices, vertices_size, indices, indices_size, model_view_projection.e);
             }
           }
         }
