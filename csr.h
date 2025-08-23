@@ -57,6 +57,11 @@ CSR_API CSR_INLINE float csr_maxf(float a, float b)
   return (a > b) ? a : b;
 }
 
+CSR_API CSR_INLINE int csr_absi(int x)
+{
+  return (x < 0 ? -x : x);
+}
+
 CSR_API CSR_INLINE int csr_mini(int a, int b)
 {
   return (a < b) ? a : b;
@@ -213,8 +218,11 @@ CSR_API CSR_INLINE void csr_draw_line(csr_context *context, float p0[3], float p
   int x1 = (int)p1[0], y1 = (int)p1[1];
   float z0 = p0[2], z1 = p1[2];
 
-  int dx = abs(x1 - x0), sx = x0 < x1 ? 1 : -1;
-  int dy = -abs(y1 - y0), sy = y0 < y1 ? 1 : -1;
+  int dx = csr_absi(x1 - x0);
+  int sx = x0 < x1 ? 1 : -1;
+  int dy = -csr_absi(y1 - y0);
+  int sy = y0 < y1 ? 1 : -1;
+
   int err = dx + dy, e2;
   float z = z0;
   float dz = (float)(dx > -dy ? dx : -dy);
