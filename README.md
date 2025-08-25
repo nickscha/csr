@@ -65,9 +65,9 @@ int main() {
     void *memory = (void *)memory_total;
 
     csr_color clear_color = {40, 40, 40};
-    csr_context instance = {0};
+    csr_context context = {0};
 
-    if (!csr_init_model(&instance, memory, MEMORY_SIZE, WIDTH, HEIGHT, clear_color))
+    if (!csr_init_model(&context, memory, MEMORY_SIZE, WIDTH, HEIGHT))
     {
         return 1;
     }
@@ -81,7 +81,7 @@ int main() {
         v3 cam_look_at_pos   = vm_v3_zero;
         float cam_fov        = 90.0f;
 
-        m4x4 projection      = vm_m4x4_perspective(vm_radf(cam_fov), (float)instance.width / (float)instance.height, 0.1f, 1000.0f);
+        m4x4 projection      = vm_m4x4_perspective(vm_radf(cam_fov), (float)context.width / (float)context.height, 0.1f, 1000.0f);
         m4x4 view            = vm_m4x4_lookAt(cam_position, cam_look_at_pos, world_up);
         m4x4 projection_view = vm_m4x4_mul(projection, view);
 
@@ -99,11 +99,11 @@ int main() {
             );
 
             /* Clear Screen Frame and Depth Buffer */
-            csr_clear_screen(&instance);                                                                   
+            csr_render_clear_screen(&context, clear_color);                                                                   
 
             /* Render cube */ 
             csr_render(
-                &instance, 
+                &context, 
                 CSR_RENDER_SOLID, 
                 CSR_CULLING_CCW_BACKFACE, 6, 
                 vertices, vertices_size, 
@@ -111,7 +111,7 @@ int main() {
                 model_view_projection.e
             );
 
-            /* Afterwards you can write the instance.framebuffer to a screen or write to a file (like ppm format).
+            /* Afterwards you can write the context.framebuffer to a screen or write to a file (like ppm format).
             
                In the csr_test.c file we write each frame into a ppm file
                and then using ffmpeg (via the build.bat script) to generate a mp4 and gif file.

@@ -134,7 +134,6 @@ typedef struct csr_context
 
   int width;              /* render area width in pixels            */
   int height;             /* render area height in pixels           */
-  csr_color clear_color;  /* The default clear color for the screen */
   csr_color *framebuffer; /* memory pointer for framebuffer         */
   float *zbuffer;         /* memory pointer for zbuffer             */
 
@@ -149,7 +148,7 @@ CSR_API CSR_INLINE unsigned long csr_memory_size(int width, int height)
   );
 }
 
-CSR_API CSR_INLINE int csr_init_model(csr_context *context, void *memory, unsigned long memory_size, int width, int height, csr_color clear_color)
+CSR_API CSR_INLINE int csr_init_model(csr_context *context, void *memory, unsigned long memory_size, int width, int height)
 {
   unsigned long memory_framebuffer_size = (unsigned long)(width * height) * (unsigned long)sizeof(csr_color);
 
@@ -160,7 +159,6 @@ CSR_API CSR_INLINE int csr_init_model(csr_context *context, void *memory, unsign
 
   context->width = width;
   context->height = height;
-  context->clear_color = clear_color;
   context->framebuffer = (csr_color *)memory;
   context->zbuffer = (float *)((char *)memory + memory_framebuffer_size);
 
@@ -185,19 +183,18 @@ CSR_API CSR_INLINE void csr_ndc_to_screen(csr_context *context, float result[3],
   result[2] = ndc_pos[2];
 }
 
-CSR_API CSR_INLINE void csr_render_clear_screen(csr_context *context)
+CSR_API CSR_INLINE void csr_render_clear_screen(csr_context *context, csr_color clear_color)
 {
   int size = context->width * context->height;
-  csr_color c = context->clear_color;
 
   int i = 0;
 
   for (; i + 4 <= size; i += 4)
   {
-    context->framebuffer[i] = c;
-    context->framebuffer[i + 1] = c;
-    context->framebuffer[i + 2] = c;
-    context->framebuffer[i + 3] = c;
+    context->framebuffer[i] = clear_color;
+    context->framebuffer[i + 1] = clear_color;
+    context->framebuffer[i + 2] = clear_color;
+    context->framebuffer[i + 3] = clear_color;
     context->zbuffer[i] = 1.0f;
     context->zbuffer[i + 1] = 1.0f;
     context->zbuffer[i + 2] = 1.0f;
@@ -206,7 +203,7 @@ CSR_API CSR_INLINE void csr_render_clear_screen(csr_context *context)
 
   for (; i < size; ++i)
   {
-    context->framebuffer[i] = c;
+    context->framebuffer[i] = clear_color;
     context->zbuffer[i] = 1.0f;
   }
 }

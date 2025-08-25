@@ -43,6 +43,9 @@ static int indices[] = {
 static unsigned long vertices_size = sizeof(vertices) / sizeof(vertices[0]);
 static unsigned long indices_size = sizeof(indices) / sizeof(indices[0]);
 
+/* Default clear screen color */
+static csr_color clear_color = {40, 40, 40};
+
 /*
  * Saves a framebuffer to a PPM image file.
  *
@@ -84,10 +87,9 @@ static void csr_test_stack_alloc(void)
   unsigned char memory_total[MEMORY_SIZE] = {0};
   void *memory = (void *)memory_total;
 
-  csr_color clear_color = {40, 40, 40};
-  csr_context instance = {0};
+  csr_context context = {0};
 
-  if (!csr_init_model(&instance, memory, MEMORY_SIZE, WIDTH, HEIGHT, clear_color))
+  if (!csr_init_model(&context, memory, MEMORY_SIZE, WIDTH, HEIGHT))
   {
     return;
   }
@@ -99,7 +101,7 @@ static void csr_test_stack_alloc(void)
     v3 cam_position = vm_v3(0.0f, 0.0f, 2.0f);
     float cam_fov = 90.0f;
 
-    m4x4 projection = vm_m4x4_perspective(vm_radf(cam_fov), (float)instance.width / (float)instance.height, 0.1f, 1000.0f);
+    m4x4 projection = vm_m4x4_perspective(vm_radf(cam_fov), (float)context.width / (float)context.height, 0.1f, 1000.0f);
     m4x4 view = vm_m4x4_lookAt(cam_position, look_at_pos, up);
     m4x4 projection_view = vm_m4x4_mul(projection, view);
 
@@ -112,11 +114,11 @@ static void csr_test_stack_alloc(void)
     {
       m4x4 model_view_projection = vm_m4x4_mul(projection_view, vm_m4x4_rotate(model_base, vm_radf(5.0f * (float)(frame + 1)), rotation_axis));
 
-      PERF_PROFILE_WITH_NAME({ csr_render_clear_screen(&instance); }, "csr_clear_screen");
-      PERF_PROFILE_WITH_NAME({ csr_render(&instance, CSR_RENDER_SOLID, CSR_CULLING_CCW_BACKFACE, 6, vertices, vertices_size, indices, indices_size, model_view_projection.e); }, "csr_render_frame");
+      PERF_PROFILE_WITH_NAME({ csr_render_clear_screen(&context, clear_color); }, "csr_clear_screen");
+      PERF_PROFILE_WITH_NAME({ csr_render(&context, CSR_RENDER_SOLID, CSR_CULLING_CCW_BACKFACE, 6, vertices, vertices_size, indices, indices_size, model_view_projection.e); }, "csr_render_frame");
 
       /* Save the result to a PPM file */
-      csr_save_ppm("stack_%05d.ppm", frame, &instance);
+      csr_save_ppm("stack_%05d.ppm", frame, &context);
     }
   }
 }
@@ -129,12 +131,11 @@ static void csr_test_cube_scene_with_memory_alloc(void)
   unsigned long memory_size = csr_memory_size(width, height);
   void *memory = malloc(memory_size);
 
-  csr_color clear_color = {40, 40, 40};
-  csr_context instance = {0};
+  csr_context context = {0};
 
   printf("[csr] memory (MB): %10.4f\n", (double)memory_size / 1024.0 / 1024.0);
 
-  if (!csr_init_model(&instance, memory, memory_size, width, height, clear_color))
+  if (!csr_init_model(&context, memory, memory_size, width, height))
   {
     return;
   }
@@ -146,7 +147,7 @@ static void csr_test_cube_scene_with_memory_alloc(void)
     v3 cam_position = vm_v3(0.0f, 0.0f, 2.0f);
     float cam_fov = 90.0f;
 
-    m4x4 projection = vm_m4x4_perspective(vm_radf(cam_fov), (float)instance.width / (float)instance.height, 0.1f, 1000.0f);
+    m4x4 projection = vm_m4x4_perspective(vm_radf(cam_fov), (float)context.width / (float)context.height, 0.1f, 1000.0f);
     m4x4 view = vm_m4x4_lookAt(cam_position, look_at_pos, up);
     m4x4 projection_view = vm_m4x4_mul(projection, view);
 
@@ -160,23 +161,23 @@ static void csr_test_cube_scene_with_memory_alloc(void)
       m4x4 model = vm_m4x4_rotate(model_base, vm_radf(5.0f * (float)(frame + 1)), rotation_axis);
       m4x4 model_view_projection = vm_m4x4_mul(projection_view, model);
 
-      csr_render_clear_screen(&instance);
+      csr_render_clear_screen(&context, clear_color);
 
       /* Render first cube */
-      csr_render(&instance, CSR_RENDER_WIREFRAME, CSR_CULLING_DISABLED, 6, vertices, vertices_size, indices, indices_size, model_view_projection.e);
+      csr_render(&context, CSR_RENDER_WIREFRAME, CSR_CULLING_DISABLED, 6, vertices, vertices_size, indices, indices_size, model_view_projection.e);
 
       /* Render second cube */
       model = vm_m4x4_translate(vm_m4x4_identity, vm_v3(-2.0, 0.0f, -2.0f));
       model_view_projection = vm_m4x4_rotate(vm_m4x4_mul(projection_view, model), vm_radf(-2.5f * (float)(frame + 1)), vm_v3(1.0f, 1.0f, 1.0f));
-      csr_render(&instance,CSR_RENDER_SOLID,  CSR_CULLING_CCW_BACKFACE, 6, vertices, vertices_size, indices, indices_size, model_view_projection.e);
+      csr_render(&context, CSR_RENDER_SOLID, CSR_CULLING_CCW_BACKFACE, 6, vertices, vertices_size, indices, indices_size, model_view_projection.e);
 
       /* Render third cube */
       model = vm_m4x4_translate(vm_m4x4_identity, vm_v3(4.0, 0.0f, -5.0f));
       model_view_projection = vm_m4x4_mul(projection_view, model);
-      csr_render(&instance, CSR_RENDER_SOLID, CSR_CULLING_CCW_BACKFACE, 6, vertices, vertices_size, indices, indices_size, model_view_projection.e);
+      csr_render(&context, CSR_RENDER_SOLID, CSR_CULLING_CCW_BACKFACE, 6, vertices, vertices_size, indices, indices_size, model_view_projection.e);
 
       /* Save the result to a PPM file */
-      csr_save_ppm("cube_%05d.ppm", frame, &instance);
+      csr_save_ppm("cube_%05d.ppm", frame, &context);
     }
   }
 
@@ -191,12 +192,11 @@ static void csr_test_teddy(void)
   unsigned long memory_size = csr_memory_size(width, height);
   void *memory = malloc(memory_size);
 
-  csr_color clear_color = {40, 40, 40};
-  csr_context instance = {0};
+  csr_context context = {0};
 
   printf("[csr] memory (MB): %10.4f\n", (double)memory_size / 1024.0 / 1024.0);
 
-  if (!csr_init_model(&instance, memory, memory_size, width, height, clear_color))
+  if (!csr_init_model(&context, memory, memory_size, width, height))
   {
     return;
   }
@@ -208,7 +208,7 @@ static void csr_test_teddy(void)
     v3 cam_position = vm_v3(0.0f, 0.0f, 50.0f);
     float cam_fov = 90.0f;
 
-    m4x4 projection = vm_m4x4_perspective(vm_radf(cam_fov), (float)instance.width / (float)instance.height, 0.1f, 1000.0f);
+    m4x4 projection = vm_m4x4_perspective(vm_radf(cam_fov), (float)context.width / (float)context.height, 0.1f, 1000.0f);
     m4x4 view = vm_m4x4_lookAt(cam_position, look_at_pos, up);
     m4x4 projection_view = vm_m4x4_mul(projection, view);
 
@@ -222,9 +222,9 @@ static void csr_test_teddy(void)
       m4x4 model = vm_m4x4_rotate(model_base, vm_radf(5.0f * (float)(frame + 1)), rotation_axis);
       m4x4 model_view_projection = vm_m4x4_mul(projection_view, model);
 
-      csr_render_clear_screen(&instance);
-      csr_render(&instance,CSR_RENDER_SOLID,  CSR_CULLING_DISABLED, 3, teddy_vertices, teddy_vertices_size, teddy_indices, teddy_indices_size, model_view_projection.e);
-      csr_save_ppm("teddy_%05d.ppm", frame, &instance);
+      csr_render_clear_screen(&context, clear_color);
+      csr_render(&context, CSR_RENDER_SOLID, CSR_CULLING_DISABLED, 3, teddy_vertices, teddy_vertices_size, teddy_indices, teddy_indices_size, model_view_projection.e);
+      csr_save_ppm("teddy_%05d.ppm", frame, &context);
     }
   }
 
@@ -247,12 +247,11 @@ void csr_test_voxelize_teddy(void)
   unsigned long memory_size = csr_memory_size(width, height);
   void *memory = malloc(memory_size);
 
-  csr_color clear_color = {40, 40, 40};
-  csr_context instance = {0};
+  csr_context context = {0};
 
   printf("[csr] memory (MB): %10.4f\n", (double)memory_size / 1024.0 / 1024.0);
 
-  if (!csr_init_model(&instance, memory, memory_size, width, height, clear_color))
+  if (!csr_init_model(&context, memory, memory_size, width, height))
   {
     return;
   }
@@ -275,7 +274,7 @@ void csr_test_voxelize_teddy(void)
     v3 cam_position = vm_v3(0.0f, 0.0f, grid_z * 1.1f);
     float cam_fov = 90.0f;
 
-    m4x4 projection = vm_m4x4_perspective(vm_radf(cam_fov), (float)instance.width / (float)instance.height, 0.1f, 1000.0f);
+    m4x4 projection = vm_m4x4_perspective(vm_radf(cam_fov), (float)context.width / (float)context.height, 0.1f, 1000.0f);
     m4x4 view = vm_m4x4_lookAt(cam_position, look_at_pos, up);
     m4x4 projection_view = vm_m4x4_mul(projection, view);
 
@@ -285,7 +284,7 @@ void csr_test_voxelize_teddy(void)
     {
       transformation parent = vm_transformation_init();
 
-      csr_render_clear_screen(&instance);
+      csr_render_clear_screen(&context, clear_color);
 
       vm_tranformation_rotate(&parent, vm_v3(0.0f, 1.0f, 0.0f), vm_radf(5.0f * (float)(frame + 1)));
 
@@ -302,7 +301,7 @@ void csr_test_voxelize_teddy(void)
         model = vm_transformation_matrix(&child);
         model_view_projection = vm_m4x4_mul(projection_view, model);
 
-        csr_render(&instance,CSR_RENDER_SOLID,  CSR_CULLING_DISABLED, 3, teddy_vertices, teddy_vertices_size, teddy_indices, teddy_indices_size, model_view_projection.e);
+        csr_render(&context, CSR_RENDER_SOLID, CSR_CULLING_DISABLED, 3, teddy_vertices, teddy_vertices_size, teddy_indices, teddy_indices_size, model_view_projection.e);
       }
 
       /* Render voxelized teddy */
@@ -331,14 +330,14 @@ void csr_test_voxelize_teddy(void)
               model_view_projection = vm_m4x4_mul(projection_view, model);
 
               /* Render voxel cube */
-              csr_render(&instance, CSR_RENDER_SOLID, CSR_CULLING_CCW_BACKFACE, 6, vertices, vertices_size, indices, indices_size, model_view_projection.e);
+              csr_render(&context, CSR_RENDER_SOLID, CSR_CULLING_CCW_BACKFACE, 6, vertices, vertices_size, indices, indices_size, model_view_projection.e);
             }
           }
         }
       }
 
       /* Save the result to a PPM file */
-      csr_save_ppm("voxel_teddy_%05d.ppm", frame, &instance);
+      csr_save_ppm("voxel_teddy_%05d.ppm", frame, &context);
     }
   }
 
@@ -362,12 +361,11 @@ void csr_test_voxelize_head(void)
   unsigned long memory_size = csr_memory_size(width, height);
   void *memory = malloc(memory_size);
 
-  csr_color clear_color = {40, 40, 40};
-  csr_context instance = {0};
+  csr_context context = {0};
 
   printf("[csr] memory (MB): %10.4f\n", (double)memory_size / 1024.0 / 1024.0);
 
-  if (!csr_init_model(&instance, memory, memory_size, width, height, clear_color))
+  if (!csr_init_model(&context, memory, memory_size, width, height))
   {
     return;
   }
@@ -390,7 +388,7 @@ void csr_test_voxelize_head(void)
     v3 cam_position = vm_v3(0.0f, 0.0f, grid_head_z);
     float cam_fov = 90.0f;
 
-    m4x4 projection = vm_m4x4_perspective(vm_radf(cam_fov), (float)instance.width / (float)instance.height, 0.1f, 1000.0f);
+    m4x4 projection = vm_m4x4_perspective(vm_radf(cam_fov), (float)context.width / (float)context.height, 0.1f, 1000.0f);
     m4x4 view = vm_m4x4_lookAt(cam_position, look_at_pos, up);
     m4x4 projection_view = vm_m4x4_mul(projection, view);
 
@@ -400,7 +398,7 @@ void csr_test_voxelize_head(void)
     {
       transformation parent = vm_transformation_init();
 
-      csr_render_clear_screen(&instance);
+      csr_render_clear_screen(&context, clear_color);
 
       vm_tranformation_rotate(&parent, vm_v3(0.0f, 1.0f, 0.0f), vm_radf(5.0f * (float)(frame + 1)));
 
@@ -430,14 +428,14 @@ void csr_test_voxelize_head(void)
               model_view_projection = vm_m4x4_mul(projection_view, model);
 
               /* Render voxel cube */
-              csr_render(&instance, CSR_RENDER_SOLID, CSR_CULLING_CCW_BACKFACE, 6, vertices, vertices_size, indices, indices_size, model_view_projection.e);
+              csr_render(&context, CSR_RENDER_SOLID, CSR_CULLING_CCW_BACKFACE, 6, vertices, vertices_size, indices, indices_size, model_view_projection.e);
             }
           }
         }
       }
 
       /* Save the result to a PPM file */
-      csr_save_ppm("voxel_head_%05d.ppm", frame, &instance);
+      csr_save_ppm("voxel_head_%05d.ppm", frame, &context);
     }
   }
 
