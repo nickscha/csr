@@ -69,12 +69,12 @@ MVX_API MVX_INLINE float mvx_clampf(float v, float min, float max)
   return mvx_minf(max, mvx_maxf(v, min));
 }
 
-MVX_API MVX_INLINE int mvx_min_int(int a, int b)
+MVX_API MVX_INLINE int mvx_mini(int a, int b)
 {
   return (a < b) ? a : b;
 }
 
-MVX_API MVX_INLINE int mvx_max_int(int a, int b)
+MVX_API MVX_INLINE int mvx_maxi(int a, int b)
 {
   return (a > b) ? a : b;
 }
@@ -94,7 +94,7 @@ MVX_API MVX_INLINE int mvx_ceilf(float v)
   return -mvx_floorf(-v);
 }
 
-MVX_API MVX_INLINE int mvx_clamp_int(int v, int min, int max)
+MVX_API MVX_INLINE int mvx_clampi(int v, int min, int max)
 {
   if (v < min)
   {
@@ -224,18 +224,18 @@ MVX_API MVX_INLINE mvx_v3i mvx_v3i_init(int x, int y, int z)
 MVX_API MVX_INLINE mvx_v3i mvx_v3i_min(mvx_v3i a, mvx_v3i b)
 {
   mvx_v3i result;
-  result.x = mvx_min_int(a.x, b.x);
-  result.y = mvx_min_int(a.y, b.y);
-  result.z = mvx_min_int(a.z, b.z);
+  result.x = mvx_mini(a.x, b.x);
+  result.y = mvx_mini(a.y, b.y);
+  result.z = mvx_mini(a.z, b.z);
   return result;
 }
 
 MVX_API MVX_INLINE mvx_v3i mvx_v3i_max(mvx_v3i a, mvx_v3i b)
 {
   mvx_v3i result;
-  result.x = mvx_max_int(a.x, b.x);
-  result.y = mvx_max_int(a.y, b.y);
-  result.z = mvx_max_int(a.z, b.z);
+  result.x = mvx_maxi(a.x, b.x);
+  result.y = mvx_maxi(a.y, b.y);
+  result.z = mvx_maxi(a.z, b.z);
   return result;
 }
 
@@ -300,7 +300,7 @@ MVX_API MVX_INLINE int mvx_triangle_box_overlap(
         float pmax = mvx_maxf(mvx_maxf(p0, p1), p2);
         float pmin = mvx_minf(mvx_minf(p0, p1), p2);
         float rad = boxhalf.y * f.z + boxhalf.z * f.y + SLOP;
-        
+
         if (pmax < -rad || pmin > rad)
         {
           return 0;
@@ -524,19 +524,19 @@ MVX_API MVX_INLINE int mvx_voxelize_mesh(
         mvx_ceilf((tmax_b.z - min_b.z) / vxsize) + margin.z);
 
     /* clamp to object's voxel range and overall grid */
-    i_min.x = mvx_clamp_int(i_min.x, margin.x, margin.x + (int)need_v.x - 1);
-    i_min.y = mvx_clamp_int(i_min.y, margin.y, margin.y + (int)need_v.y - 1);
-    i_min.z = mvx_clamp_int(i_min.z, margin.z, margin.z + (int)need_v.z - 1);
-    i_max.x = mvx_clamp_int(i_max.x, margin.x, margin.x + (int)need_v.x - 1);
-    i_max.y = mvx_clamp_int(i_max.y, margin.y, margin.y + (int)need_v.y - 1);
-    i_max.z = mvx_clamp_int(i_max.z, margin.z, margin.z + (int)need_v.z - 1);
+    i_min.x = mvx_clampi(i_min.x, margin.x, margin.x + (int)need_v.x - 1);
+    i_min.y = mvx_clampi(i_min.y, margin.y, margin.y + (int)need_v.y - 1);
+    i_min.z = mvx_clampi(i_min.z, margin.z, margin.z + (int)need_v.z - 1);
+    i_max.x = mvx_clampi(i_max.x, margin.x, margin.x + (int)need_v.x - 1);
+    i_max.y = mvx_clampi(i_max.y, margin.y, margin.y + (int)need_v.y - 1);
+    i_max.z = mvx_clampi(i_max.z, margin.z, margin.z + (int)need_v.z - 1);
 
-    i_min.x = mvx_clamp_int(i_min.x, 0, grid_x - 1);
-    i_min.y = mvx_clamp_int(i_min.y, 0, grid_y - 1);
-    i_min.z = mvx_clamp_int(i_min.z, 0, grid_z - 1);
-    i_max.x = mvx_clamp_int(i_max.x, 0, grid_x - 1);
-    i_max.y = mvx_clamp_int(i_max.y, 0, grid_y - 1);
-    i_max.z = mvx_clamp_int(i_max.z, 0, grid_z - 1);
+    i_min.x = mvx_clampi(i_min.x, 0, grid_x - 1);
+    i_min.y = mvx_clampi(i_min.y, 0, grid_y - 1);
+    i_min.z = mvx_clampi(i_min.z, 0, grid_z - 1);
+    i_max.x = mvx_clampi(i_max.x, 0, grid_x - 1);
+    i_max.y = mvx_clampi(i_max.y, 0, grid_y - 1);
+    i_max.z = mvx_clampi(i_max.z, 0, grid_z - 1);
 
     if (i_min.x > i_max.x || i_min.y > i_max.y || i_min.z > i_max.z)
     {
@@ -572,6 +572,554 @@ MVX_API MVX_INLINE int mvx_voxelize_mesh(
     }
   }
 
+  return 1;
+}
+
+/* Get voxel value with boundary checks. */
+#define MVX_GET_VOXEL(voxels, x, y, z, gx, gy, gz)      \
+  (((x) >= 0 && (x) < (gx) &&                           \
+    (y) >= 0 && (y) < (gy) &&                           \
+    (z) >= 0 && (z) < (gz))                             \
+       ? (voxels)[(x) + (y) * (gx) + (z) * (gx) * (gy)] \
+       : 0)
+
+MVX_API MVX_INLINE int mvx_convert_voxels_to_mesh(
+    unsigned char *voxels,
+    int grid_x,
+    int grid_y,
+    int grid_z,
+    float voxel_size,
+    float *out_vertices,
+    unsigned long out_vertices_cap,
+    unsigned long *out_vert_count,
+    int *out_indices,
+    unsigned long out_indices_cap,
+    unsigned long *out_index_count)
+{
+  long x, y, z;
+  unsigned long current_vert_idx = 0;
+  unsigned long current_index_idx = 0;
+  float half_voxel_size = voxel_size * 0.5f;
+
+  /* A set of 4 vertices for each of the 6 faces.
+   * The order of vertices is chosen to provide consistent winding. */
+  float mvx_face_vertices[6][4][3] = {
+      /* +Z face */
+      {{-1.0f, -1.0f, 1.0f}, {1.0f, -1.0f, 1.0f}, {1.0f, 1.0f, 1.0f}, {-1.0f, 1.0f, 1.0f}},
+      /* -Z face */
+      {{-1.0f, -1.0f, -1.0f}, {-1.0f, 1.0f, -1.0f}, {1.0f, 1.0f, -1.0f}, {1.0f, -1.0f, -1.0f}},
+      /* +Y face */
+      {{-1.0f, 1.0f, -1.0f}, {-1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, -1.0f}},
+      /* -Y face */
+      {{-1.0f, -1.0f, -1.0f}, {1.0f, -1.0f, -1.0f}, {1.0f, -1.0f, 1.0f}, {-1.0f, -1.0f, 1.0f}},
+      /* +X face */
+      {{1.0f, -1.0f, -1.0f}, {1.0f, 1.0f, -1.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, -1.0f, 1.0f}},
+      /* -X face */
+      {{-1.0f, -1.0f, -1.0f}, {-1.0f, -1.0f, 1.0f}, {-1.0f, 1.0f, 1.0f}, {-1.0f, 1.0f, -1.0f}}};
+
+  /* Indices for a quad (two triangles) from 4 vertices. */
+  int mvx_face_indices[6] = {0, 1, 2, 0, 2, 3};
+
+  /* Check for invalid input pointers. */
+  if (!voxels || !out_vertices || !out_indices || !out_vert_count || !out_index_count)
+  {
+    return 0;
+  }
+
+  *out_vert_count = 0;
+  *out_index_count = 0;
+
+  for (z = 0; z < grid_z; ++z)
+  {
+    for (y = 0; y < grid_y; ++y)
+    {
+      for (x = 0; x < grid_x; ++x)
+      {
+        long id = x + y * grid_x + z * grid_x * grid_y;
+
+        if (voxels[id])
+        {
+          /* Check for an empty neighbor in each direction. */
+
+          /* +X neighbor */
+          if (MVX_GET_VOXEL(voxels, x + 1, y, z, grid_x, grid_y, grid_z) == 0)
+          {
+            int i;
+
+            if (current_vert_idx + 12 > out_vertices_cap || current_index_idx + 6 > out_indices_cap)
+            {
+              return 0;
+            }
+
+            for (i = 0; i < 4; ++i)
+            {
+              out_vertices[current_vert_idx++] = (float)x * voxel_size + half_voxel_size + mvx_face_vertices[4][i][0] * half_voxel_size;
+              out_vertices[current_vert_idx++] = (float)y * voxel_size + half_voxel_size + mvx_face_vertices[4][i][1] * half_voxel_size;
+              out_vertices[current_vert_idx++] = (float)z * voxel_size + half_voxel_size + mvx_face_vertices[4][i][2] * half_voxel_size;
+            }
+
+            for (i = 0; i < 6; ++i)
+            {
+              out_indices[current_index_idx++] = (int)((current_vert_idx / 3) - 4) + mvx_face_indices[i];
+            }
+          }
+
+          /* -X neighbor */
+          if (MVX_GET_VOXEL(voxels, x - 1, y, z, grid_x, grid_y, grid_z) == 0)
+          {
+            int i;
+
+            if (current_vert_idx + 12 > out_vertices_cap || current_index_idx + 6 > out_indices_cap)
+            {
+              return 0;
+            }
+
+            for (i = 0; i < 4; ++i)
+            {
+              out_vertices[current_vert_idx++] = (float)x * voxel_size + half_voxel_size + mvx_face_vertices[5][i][0] * half_voxel_size;
+              out_vertices[current_vert_idx++] = (float)y * voxel_size + half_voxel_size + mvx_face_vertices[5][i][1] * half_voxel_size;
+              out_vertices[current_vert_idx++] = (float)z * voxel_size + half_voxel_size + mvx_face_vertices[5][i][2] * half_voxel_size;
+            }
+
+            for (i = 0; i < 6; ++i)
+            {
+              out_indices[current_index_idx++] = (int)((current_vert_idx / 3) - 4) + mvx_face_indices[i];
+            }
+          }
+
+          /* +Y neighbor */
+          if (MVX_GET_VOXEL(voxels, x, y + 1, z, grid_x, grid_y, grid_z) == 0)
+          {
+            int i;
+
+            if (current_vert_idx + 12 > out_vertices_cap || current_index_idx + 6 > out_indices_cap)
+            {
+              return 0;
+            }
+
+            for (i = 0; i < 4; ++i)
+            {
+              out_vertices[current_vert_idx++] = (float)x * voxel_size + half_voxel_size + mvx_face_vertices[2][i][0] * half_voxel_size;
+              out_vertices[current_vert_idx++] = (float)y * voxel_size + half_voxel_size + mvx_face_vertices[2][i][1] * half_voxel_size;
+              out_vertices[current_vert_idx++] = (float)z * voxel_size + half_voxel_size + mvx_face_vertices[2][i][2] * half_voxel_size;
+            }
+
+            for (i = 0; i < 6; ++i)
+            {
+              out_indices[current_index_idx++] = (int)((current_vert_idx / 3) - 4) + mvx_face_indices[i];
+            }
+          }
+
+          /* -Y neighbor */
+          if (MVX_GET_VOXEL(voxels, x, y - 1, z, grid_x, grid_y, grid_z) == 0)
+          {
+            int i;
+
+            if (current_vert_idx + 12 > out_vertices_cap || current_index_idx + 6 > out_indices_cap)
+            {
+              return 0;
+            }
+
+            for (i = 0; i < 4; ++i)
+            {
+              out_vertices[current_vert_idx++] = (float)x * voxel_size + half_voxel_size + mvx_face_vertices[3][i][0] * half_voxel_size;
+              out_vertices[current_vert_idx++] = (float)y * voxel_size + half_voxel_size + mvx_face_vertices[3][i][1] * half_voxel_size;
+              out_vertices[current_vert_idx++] = (float)z * voxel_size + half_voxel_size + mvx_face_vertices[3][i][2] * half_voxel_size;
+            }
+
+            for (i = 0; i < 6; ++i)
+            {
+              out_indices[current_index_idx++] = (int)((current_vert_idx / 3) - 4) + mvx_face_indices[i];
+            }
+          }
+
+          /* +Z neighbor */
+          if (MVX_GET_VOXEL(voxels, x, y, z + 1, grid_x, grid_y, grid_z) == 0)
+          {
+            int i;
+
+            if (current_vert_idx + 12 > out_vertices_cap || current_index_idx + 6 > out_indices_cap)
+            {
+              return 0;
+            }
+
+            for (i = 0; i < 4; ++i)
+            {
+              out_vertices[current_vert_idx++] = (float)x * voxel_size + half_voxel_size + mvx_face_vertices[0][i][0] * half_voxel_size;
+              out_vertices[current_vert_idx++] = (float)y * voxel_size + half_voxel_size + mvx_face_vertices[0][i][1] * half_voxel_size;
+              out_vertices[current_vert_idx++] = (float)z * voxel_size + half_voxel_size + mvx_face_vertices[0][i][2] * half_voxel_size;
+            }
+
+            for (i = 0; i < 6; ++i)
+            {
+              out_indices[current_index_idx++] = (int)((current_vert_idx / 3) - 4) + mvx_face_indices[i];
+            }
+          }
+
+          /* -Z neighbor */
+          if (MVX_GET_VOXEL(voxels, x, y, z - 1, grid_x, grid_y, grid_z) == 0)
+          {
+            int i;
+
+            if (current_vert_idx + 12 > out_vertices_cap || current_index_idx + 6 > out_indices_cap)
+            {
+              return 0;
+            }
+
+            for (i = 0; i < 4; ++i)
+            {
+              out_vertices[current_vert_idx++] = (float)x * voxel_size + half_voxel_size + mvx_face_vertices[1][i][0] * half_voxel_size;
+              out_vertices[current_vert_idx++] = (float)y * voxel_size + half_voxel_size + mvx_face_vertices[1][i][1] * half_voxel_size;
+              out_vertices[current_vert_idx++] = (float)z * voxel_size + half_voxel_size + mvx_face_vertices[1][i][2] * half_voxel_size;
+            }
+
+            for (i = 0; i < 6; ++i)
+            {
+              out_indices[current_index_idx++] = (int)((current_vert_idx / 3) - 4) + mvx_face_indices[i];
+            }
+          }
+        }
+      }
+    }
+  }
+
+  *out_vert_count = current_vert_idx;
+  *out_index_count = current_index_idx;
+
+  return 1;
+}
+
+MVX_API MVX_INLINE int mvx_convert_voxels_to_mesh_greedy(
+    unsigned char *voxels,
+    int grid_x,
+    int grid_y,
+    int grid_z,
+    float voxel_size,
+    float *out_vertices,
+    unsigned long out_vertices_cap,
+    unsigned long *out_vert_count,
+    int *out_indices,
+    unsigned long out_indices_cap,
+    unsigned long *out_index_count)
+{
+  /* declarations first (C89) */
+  int axis, u, v;
+  int dims[3];
+  int i, j, k;
+  int d; /* depth / sweep index */
+  int w, h;
+  int max_slice;
+  int dim_u, dim_v;
+  signed char *mask;
+  static signed char static_mask[2048 * 2048]; /* adjust if you need larger */
+  unsigned long current_vert_idx;
+  unsigned long current_index_idx;
+  float dpos_world;
+  float u0f, u1f, v0f, v1f;
+  float corner_uc, corner_vc;
+  float coords[3];
+  int base_idx;
+  signed char m;
+
+  /* validate inputs */
+  if (!voxels || !out_vertices || !out_indices || !out_vert_count || !out_index_count)
+  {
+    return 0;
+  }
+
+  dims[0] = grid_x;
+  dims[1] = grid_y;
+  dims[2] = grid_z;
+
+  /* compute maximum possible 2D slice size (u * v) */
+  {
+    int xy = grid_x * grid_y;
+    int yz = grid_y * grid_z;
+    int zx = grid_z * grid_x;
+    max_slice = xy;
+    if (yz > max_slice)
+      max_slice = yz;
+    if (zx > max_slice)
+      max_slice = zx;
+  }
+
+  /* guard the static mask size */
+  if (max_slice > (int)(sizeof(static_mask) / sizeof(static_mask[0])))
+  {
+    /* static mask too small for this grid */
+    return 0;
+  }
+  mask = static_mask;
+
+  current_vert_idx = 0UL;
+  current_index_idx = 0UL;
+
+  /* sweep each principal axis */
+  for (axis = 0; axis < 3; ++axis)
+  {
+    u = (axis + 1) % 3;
+    v = (axis + 2) % 3;
+
+    dim_u = dims[u];
+    dim_v = dims[v];
+
+    /* sweep depth d from 0..dims[axis] (inclusive) comparing voxels at d-1 and d */
+    for (d = 0; d <= dims[axis]; ++d)
+    {
+      /* build mask for this slice: mask[y*dim_u + x] where x in [0..dim_u), y in [0..dim_v) */
+      for (j = 0; j < dim_v; ++j)
+      {
+        for (i = 0; i < dim_u; ++i)
+        {
+          int a_x, a_y, a_z;
+          int b_x, b_y, b_z;
+          unsigned char a_val;
+          unsigned char b_val;
+
+          /* map coordinates for voxel A (at depth d-1) and voxel B (at depth d) */
+          a_x = a_y = a_z = 0;
+          b_x = b_y = b_z = 0;
+
+          /* set u / v coordinates */
+          if (u == 0)
+          {
+            a_x = i;
+            b_x = i;
+          }
+          else if (u == 1)
+          {
+            a_y = i;
+            b_y = i;
+          }
+          else
+          {
+            a_z = i;
+            b_z = i;
+          }
+
+          if (v == 0)
+          {
+            a_x = j;
+            b_x = j;
+          }
+          else if (v == 1)
+          {
+            a_y = j;
+            b_y = j;
+          }
+          else
+          {
+            a_z = j;
+            b_z = j;
+          }
+
+          /* set depth coordinate */
+          if (axis == 0)
+          {
+            a_x = d - 1;
+            b_x = d;
+          }
+          else if (axis == 1)
+          {
+            a_y = d - 1;
+            b_y = d;
+          }
+          else
+          {
+            a_z = d - 1;
+            b_z = d;
+          }
+
+          /* get voxel values using macro (handles bounds) */
+          a_val = (unsigned char)MVX_GET_VOXEL(voxels, a_x, a_y, a_z, grid_x, grid_y, grid_z);
+          b_val = (unsigned char)MVX_GET_VOXEL(voxels, b_x, b_y, b_z, grid_x, grid_y, grid_z);
+
+          /* mask value: 0 = none, 1 = face from A->B (A=1,B=0), 2 = face from B->A (A=0,B=1) */
+          if (a_val && !b_val)
+            mask[j * dim_u + i] = 1;
+          else if (!a_val && b_val)
+            mask[j * dim_u + i] = 2;
+          else
+            mask[j * dim_u + i] = 0;
+        }
+      }
+
+      /* greedy merge the mask into rectangles */
+      for (j = 0; j < dim_v; ++j)
+      {
+        i = 0;
+        while (i < dim_u)
+        {
+          m = mask[j * dim_u + i];
+          if (m)
+          {
+            /* find width */
+            w = 1;
+            while ((i + w) < dim_u && mask[j * dim_u + (i + w)] == m)
+              ++w;
+
+            /* find height */
+            h = 1;
+            while ((j + h) < dim_v)
+            {
+              int kk;
+              int ok = 1;
+              for (kk = 0; kk < w; ++kk)
+              {
+                if (mask[(j + h) * dim_u + (i + kk)] != m)
+                {
+                  ok = 0;
+                  break;
+                }
+              }
+              if (!ok)
+                break;
+              ++h;
+            }
+
+            /* plane position in world space (boundary at integer d) */
+            dpos_world = (float)d * voxel_size;
+
+            /* u/v world bounds for rectangle */
+            u0f = (float)i * voxel_size;
+            u1f = (float)(i + w) * voxel_size;
+            v0f = (float)j * voxel_size;
+            v1f = (float)(j + h) * voxel_size;
+
+            /* produce 4 vertices on plane d (map u->axis u, v->axis v) */
+            /* ordering: for m==2 (B==1) use (u0,v0),(u1,v0),(u1,v1),(u0,v1) */
+            /* for m==1 (A==1) reverse to flip normal */
+            if (current_vert_idx + 12UL > out_vertices_cap || current_index_idx + 6UL > out_indices_cap)
+            {
+              return 0;
+            }
+
+            if (m == 2)
+            {
+              /* positive-facing */
+              /* corner 0: (u0, v0) */
+              corner_uc = u0f;
+              corner_vc = v0f;
+              coords[axis] = dpos_world;
+              coords[u] = corner_uc;
+              coords[v] = corner_vc;
+              out_vertices[current_vert_idx++] = coords[0];
+              out_vertices[current_vert_idx++] = coords[1];
+              out_vertices[current_vert_idx++] = coords[2];
+
+              /* corner 1: (u1, v0) */
+              corner_uc = u1f;
+              corner_vc = v0f;
+              coords[axis] = dpos_world;
+              coords[u] = corner_uc;
+              coords[v] = corner_vc;
+              out_vertices[current_vert_idx++] = coords[0];
+              out_vertices[current_vert_idx++] = coords[1];
+              out_vertices[current_vert_idx++] = coords[2];
+
+              /* corner 2: (u1, v1) */
+              corner_uc = u1f;
+              corner_vc = v1f;
+              coords[axis] = dpos_world;
+              coords[u] = corner_uc;
+              coords[v] = corner_vc;
+              out_vertices[current_vert_idx++] = coords[0];
+              out_vertices[current_vert_idx++] = coords[1];
+              out_vertices[current_vert_idx++] = coords[2];
+
+              /* corner 3: (u0, v1) */
+              corner_uc = u0f;
+              corner_vc = v1f;
+              coords[axis] = dpos_world;
+              coords[u] = corner_uc;
+              coords[v] = corner_vc;
+              out_vertices[current_vert_idx++] = coords[0];
+              out_vertices[current_vert_idx++] = coords[1];
+              out_vertices[current_vert_idx++] = coords[2];
+
+              base_idx = (int)((current_vert_idx / 3UL) - 4UL);
+              out_indices[current_index_idx++] = base_idx + 0;
+              out_indices[current_index_idx++] = base_idx + 1;
+              out_indices[current_index_idx++] = base_idx + 2;
+              out_indices[current_index_idx++] = base_idx + 0;
+              out_indices[current_index_idx++] = base_idx + 2;
+              out_indices[current_index_idx++] = base_idx + 3;
+            }
+            else
+            {
+              /* negative-facing (flip winding) */
+              /* corner 0: (u0, v0) */
+              corner_uc = u0f;
+              corner_vc = v0f;
+              coords[axis] = dpos_world;
+              coords[u] = corner_uc;
+              coords[v] = corner_vc;
+              out_vertices[current_vert_idx++] = coords[0];
+              out_vertices[current_vert_idx++] = coords[1];
+              out_vertices[current_vert_idx++] = coords[2];
+
+              /* corner 1: (u0, v1) */
+              corner_uc = u0f;
+              corner_vc = v1f;
+              coords[axis] = dpos_world;
+              coords[u] = corner_uc;
+              coords[v] = corner_vc;
+              out_vertices[current_vert_idx++] = coords[0];
+              out_vertices[current_vert_idx++] = coords[1];
+              out_vertices[current_vert_idx++] = coords[2];
+
+              /* corner 2: (u1, v1) */
+              corner_uc = u1f;
+              corner_vc = v1f;
+              coords[axis] = dpos_world;
+              coords[u] = corner_uc;
+              coords[v] = corner_vc;
+              out_vertices[current_vert_idx++] = coords[0];
+              out_vertices[current_vert_idx++] = coords[1];
+              out_vertices[current_vert_idx++] = coords[2];
+
+              /* corner 3: (u1, v0) */
+              corner_uc = u1f;
+              corner_vc = v0f;
+              coords[axis] = dpos_world;
+              coords[u] = corner_uc;
+              coords[v] = corner_vc;
+              out_vertices[current_vert_idx++] = coords[0];
+              out_vertices[current_vert_idx++] = coords[1];
+              out_vertices[current_vert_idx++] = coords[2];
+
+              base_idx = (int)((current_vert_idx / 3UL) - 4UL);
+              out_indices[current_index_idx++] = base_idx + 0;
+              out_indices[current_index_idx++] = base_idx + 2;
+              out_indices[current_index_idx++] = base_idx + 1;
+              out_indices[current_index_idx++] = base_idx + 0;
+              out_indices[current_index_idx++] = base_idx + 3;
+              out_indices[current_index_idx++] = base_idx + 2;
+            }
+
+            /* zero-out used mask cells */
+            for (k = 0; k < h; ++k)
+            {
+              int kk;
+              for (kk = 0; kk < w; ++kk)
+              {
+                mask[(j + k) * dim_u + (i + kk)] = 0;
+              }
+            }
+
+            i += w;
+          }
+          else
+          {
+            ++i;
+          }
+        }
+      }
+    } /* end sweep d */
+  } /* end axis */
+
+  *out_vert_count = current_vert_idx;
+  *out_index_count = current_index_idx;
   return 1;
 }
 

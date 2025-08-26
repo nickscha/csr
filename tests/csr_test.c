@@ -239,6 +239,13 @@ void csr_test_voxelize_teddy(void)
 #define grid_z 101
   unsigned char *voxels = malloc(grid_x * grid_y * grid_z);
 
+  unsigned long vox_vertices_capacity = 1000000 * sizeof(float);
+  unsigned long vox_indices_capacity = 1000000 * sizeof(int);
+  unsigned long vox_vertices_size = 0;
+  unsigned long vox_indices_size = 0;
+  float *vox_vertices = malloc(vox_vertices_capacity);
+  int *vox_indices = malloc(vox_indices_capacity);
+
   int z, y, x;
 
   int width = 800;
@@ -267,6 +274,8 @@ void csr_test_voxelize_teddy(void)
     return;
   }
 
+  PERF_PROFILE(mvx_convert_voxels_to_mesh_greedy(voxels, grid_x, grid_y, grid_z, 1.0f, vox_vertices, vox_vertices_capacity, &vox_vertices_size, vox_indices, vox_indices_capacity, &vox_indices_size));
+
   {
     /* Camera setup using your linear algebra library */
     v3 look_at_pos = vm_v3_zero;
@@ -290,7 +299,6 @@ void csr_test_voxelize_teddy(void)
 
       /* Render non voxelized teddy */
       {
-        m4x4 model;
         m4x4 model_view_projection;
 
         transformation child = vm_transformation_init();
@@ -298,10 +306,25 @@ void csr_test_voxelize_teddy(void)
 
         vm_tranformation_rotate(&child, vm_v3(0.0f, 1.0f, 0.0f), vm_radf(5.0f * (float)(frame + 1)));
 
-        model = vm_transformation_matrix(&child);
-        model_view_projection = vm_m4x4_mul(projection_view, model);
+        model_view_projection = vm_m4x4_mul(projection_view, vm_transformation_matrix(&child));
 
         csr_render(&context, CSR_RENDER_SOLID, CSR_CULLING_DISABLED, 3, teddy_vertices, teddy_vertices_size, teddy_indices, teddy_indices_size, model_view_projection.e);
+      }
+
+      /* Render voxelized teddy converted to vertices/indices mesh */
+      {
+        m4x4 model_view_projection;
+
+        transformation parent = vm_transformation_init();
+        transformation child = vm_transformation_init();
+        child.position = vm_v3(grid_x * 0.5f, -grid_y * 0.5f, -grid_z * 0.5f - 20.0f);
+        child.parent = &parent;
+
+        vm_tranformation_rotate(&parent, vm_v3(1.0f, 0.0f, 0.0f), vm_radf(5.0f * (float)(frame + 1)));
+
+        model_view_projection = vm_m4x4_mul(projection_view, vm_transformation_matrix(&child));
+
+        csr_render(&context, CSR_RENDER_SOLID, CSR_CULLING_DISABLED, 3, vox_vertices, vox_vertices_size, vox_indices, vox_indices_size, model_view_projection.e);
       }
 
       /* Render voxelized teddy */
@@ -341,6 +364,8 @@ void csr_test_voxelize_teddy(void)
     }
   }
 
+  free(vox_vertices);
+  free(vox_indices);
   free(memory);
   free(voxels);
 }
