@@ -30,6 +30,11 @@ LICENSE
 #define CSR_API static
 #endif
 
+/* If we are on a platform that does not use SSE we undefine CSR_USE_SSE if accidently enabled by the user */
+#if defined(CSR_USE_SSE) && !(defined(__x86_64__) || defined(__i386__))
+#undef CSR_USE_SSE
+#endif
+
 #ifdef CSR_USE_SSE
 #include <xmmintrin.h>
 #endif
