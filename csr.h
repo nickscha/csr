@@ -1,4 +1,4 @@
-/* csr.h - v0.1 - public domain data structures - nickscha 2025
+/* csr.h - v0.2 - public domain data structures - nickscha 2025
 
 A C89 standard compliant, single header, nostdlib (no C Standard Library) software renderer (CSR).
 
