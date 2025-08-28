@@ -10,6 +10,7 @@ LICENSE
 */
 #include <stdio.h>       /* Testing only: write ppm file                                        */
 #include <stdlib.h>      /* Testing only: malloc/free                                           */
+#define CSR_USE_SSE      /* Enable SIMD SSE                                                     */
 #include "../csr.h"      /* C Software Renderer                                                 */
 #include "vm.h"          /* Linear Algebra Math Library (you can use any library that you want) */
 #include "perf.h"        /* Simple Performance Profiler                                         */

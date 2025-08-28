@@ -30,6 +30,10 @@ LICENSE
 #define CSR_API static
 #endif
 
+#ifdef CSR_USE_SSE
+#include <xmmintrin.h>
+#endif
+
 /* #############################################################################
  * # MATRIX LAYOUT
  * #############################################################################
@@ -82,21 +86,53 @@ CSR_API CSR_INLINE void csr_pos_init(float *pos, float x, float y, float z, floa
 
 CSR_API CSR_INLINE void csr_v4_divf(float result[4], float v[4], float f)
 {
+#ifdef CSR_USE_SSE
+  __m128 vec = _mm_loadu_ps(v);
+  __m128 scalar = _mm_set1_ps(f);
+  __m128 inv_scalar = _mm_rcp_ps(scalar);
+  __m128 res_vec = _mm_mul_ps(vec, inv_scalar);
+
+  _mm_storeu_ps(result, res_vec);
+#else
   float inv_f = 1.0f / f;
 
   result[0] = v[0] * inv_f;
   result[1] = v[1] * inv_f;
   result[2] = v[2] * inv_f;
   result[3] = v[3] * inv_f;
+#endif
 }
 
 /* Multiplies a 4x4 matrix by a 4D vector, respecting the defined matrix layout. */
 CSR_API CSR_INLINE void csr_m4x4_mul_v4(float result[4], float m[16], float v[4])
 {
+#ifdef CSR_USE_SSE
+  __m128 vec_x, vec_y, vec_z, vec_w;
+  __m128 res;
+  __m128 col0, col1, col2, col3;
+
+  vec_x = _mm_set1_ps(v[0]);
+  vec_y = _mm_set1_ps(v[1]);
+  vec_z = _mm_set1_ps(v[2]);
+  vec_w = _mm_set1_ps(v[3]);
+
+  col0 = _mm_loadu_ps(&m[CSR_M4X4_AT(0, 0)]);
+  col1 = _mm_loadu_ps(&m[CSR_M4X4_AT(0, 1)]);
+  col2 = _mm_loadu_ps(&m[CSR_M4X4_AT(0, 2)]);
+  col3 = _mm_loadu_ps(&m[CSR_M4X4_AT(0, 3)]);
+
+  res = _mm_mul_ps(col0, vec_x);
+  res = _mm_add_ps(res, _mm_mul_ps(col1, vec_y));
+  res = _mm_add_ps(res, _mm_mul_ps(col2, vec_z));
+  res = _mm_add_ps(res, _mm_mul_ps(col3, vec_w));
+
+  _mm_storeu_ps(result, res);
+#else
   result[0] = m[CSR_M4X4_AT(0, 0)] * v[0] + m[CSR_M4X4_AT(0, 1)] * v[1] + m[CSR_M4X4_AT(0, 2)] * v[2] + m[CSR_M4X4_AT(0, 3)] * v[3];
   result[1] = m[CSR_M4X4_AT(1, 0)] * v[0] + m[CSR_M4X4_AT(1, 1)] * v[1] + m[CSR_M4X4_AT(1, 2)] * v[2] + m[CSR_M4X4_AT(1, 3)] * v[3];
   result[2] = m[CSR_M4X4_AT(2, 0)] * v[0] + m[CSR_M4X4_AT(2, 1)] * v[1] + m[CSR_M4X4_AT(2, 2)] * v[2] + m[CSR_M4X4_AT(2, 3)] * v[3];
   result[3] = m[CSR_M4X4_AT(3, 0)] * v[0] + m[CSR_M4X4_AT(3, 1)] * v[1] + m[CSR_M4X4_AT(3, 2)] * v[2] + m[CSR_M4X4_AT(3, 3)] * v[3];
+#endif
 }
 
 /* #############################################################################
