@@ -8,15 +8,15 @@ LICENSE
   See end of file for detailed license information.
 
 */
-#include <stdio.h>       /* Testing only: write ppm file                                        */
-#include <stdlib.h>      /* Testing only: malloc/free                                           */
-#define CSR_USE_SSE      /* Enable SIMD SSE                                                     */
-#include "../csr.h"      /* C Software Renderer                                                 */
-#include "vm.h"          /* Linear Algebra Math Library (you can use any library that you want) */
-#include "perf.h"        /* Simple Performance Profiler                                         */
-#include "mvx.h"         /* Mesh Voxelizer                                                      */
-#include "tools/teddy.h" /* Teddy OBJ file converted to C89 arrays                              */
-#include "tools/head.h"  /* Head OBJ file                                                       */
+#include <stdio.h>        /* Testing only: write ppm file                                        */
+#include <stdlib.h>       /* Testing only: malloc/free                                           */
+#define CSR_USE_SSE       /* Enable SIMD SSE                                                     */
+#include "../csr.h"       /* C Software Renderer                                                 */
+#include "../deps/vm.h"   /* Linear Algebra Math Library (you can use any library that you want) */
+#include "../deps/perf.h" /* Simple Performance Profiler                                         */
+#include "../deps/mvx.h"  /* Mesh Voxelizer                                                      */
+#include "tools/teddy.h"  /* Teddy OBJ file converted to C89 arrays                              */
+#include "tools/head.h"   /* Head OBJ file                                                       */
 
 /* Vertex data array with interleaved position and color (RGB) */
 static float vertices[] = {
