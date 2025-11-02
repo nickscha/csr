@@ -105,7 +105,7 @@ int main() {
             csr_render(
                 &context, 
                 CSR_RENDER_SOLID, 
-                CSR_CULLING_CCW_BACKFACE, 6, 
+                CSR_CULLING_CCW_BACKFACE, 3, 
                 vertices, vertices_size, 
                 indices, indices_size, 
                 model_view_projection.e
