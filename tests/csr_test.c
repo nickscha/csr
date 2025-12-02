@@ -20,16 +20,14 @@ LICENSE
 
 /* Vertex data array with interleaved position and color (RGB) */
 static float vertices[] = {
-    /* Position x,y,z  | Color r,g,b */
-    -0.5f, -0.5f, 0.5f, 255.0f, 0.0f, 0.0f,    /* 0: Red     */
-    0.5f, -0.5f, 0.5f, 0.0f, 255.0f, 0.0f,     /* 1: Green   */
-    0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 255.0f,      /* 2: Blue    */
-    -0.5f, 0.5f, 0.5f, 255.0f, 255.0f, 0.0f,   /* 3: Yellow  */
-    -0.5f, -0.5f, -0.5f, 255.0f, 0.0f, 255.0f, /* 4: Magenta */
-    0.5f, -0.5f, -0.5f, 0.0f, 255.0f, 255.0f,  /* 5: Cyan    */
-    0.5f, 0.5f, -0.5f, 255.0f, 255.0f, 255.0f, /* 6: White   */
-    -0.5f, 0.5f, -0.5f, 128.0f, 128.0f, 128.0f /* 7: Gray    */
-};
+    -0.5f, -0.5f, 0.5f,  /**/
+    0.5f, -0.5f, 0.5f,   /**/
+    0.5f, 0.5f, 0.5f,    /**/
+    -0.5f, 0.5f, 0.5f,   /**/
+    -0.5f, -0.5f, -0.5f, /**/
+    0.5f, -0.5f, -0.5f,  /**/
+    0.5f, 0.5f, -0.5f,   /**/
+    -0.5f, 0.5f, -0.5f};
 
 /* Index data counterclockwise to form the triangles of a cube.  */
 static int indices[] = {
@@ -45,7 +43,7 @@ static unsigned int vertices_size = sizeof(vertices) / sizeof(vertices[0]);
 static unsigned int indices_size = sizeof(indices) / sizeof(indices[0]);
 
 /* Default clear screen color */
-static csr_color clear_color = {40, 40, 40};
+static csr_color clear_color = {40, 40, 40, 255};
 
 /*
  * Saves a framebuffer to a PPM image file.
@@ -73,7 +71,21 @@ static void csr_save_ppm(char *filename_format, int frame, csr_context *model)
   fprintf(fp, "P6\n%d %d\n255\n", model->width, model->height);
 
   /* Pixel data */
-  fwrite(model->framebuffer, sizeof(csr_color), (size_t)(model->width * model->height), fp);
+  {
+    unsigned int total = (unsigned int)(model->width * model->height);
+    unsigned char *rgb = malloc(total * 3);
+    unsigned int i;
+
+    for (i = 0; i < total; ++i)
+    {
+      rgb[i * 3 + 0] = model->framebuffer[i].r;
+      rgb[i * 3 + 1] = model->framebuffer[i].g;
+      rgb[i * 3 + 2] = model->framebuffer[i].b;
+    }
+
+    fwrite(rgb, 1, total * 3, fp);
+    free(rgb);
+  }
 
   fclose(fp);
 }
@@ -116,7 +128,7 @@ static void csr_test_stack_alloc(void)
       m4x4 model_view_projection = vm_m4x4_mul(projection_view, vm_m4x4_rotate(model_base, vm_radf(5.0f * (float)(frame + 1)), rotation_axis));
 
       PERF_PROFILE_WITH_NAME({ csr_render_clear_screen(&context, clear_color); }, "csr_clear_screen");
-      PERF_PROFILE_WITH_NAME({ csr_render(&context, CSR_RENDER_SOLID, CSR_CULLING_CCW_BACKFACE, 6, vertices, vertices_size, indices, indices_size, model_view_projection.e); }, "csr_render_frame");
+      PERF_PROFILE_WITH_NAME({ csr_render(&context, CSR_RENDER_SOLID, CSR_CULLING_CCW_BACKFACE, vertices, vertices_size, indices, indices_size, model_view_projection.e); }, "csr_render_frame");
 
       /* Save the result to a PPM file */
       csr_save_ppm("stack_%05d.ppm", frame, &context);
@@ -165,17 +177,17 @@ static void csr_test_cube_scene_with_memory_alloc(void)
       csr_render_clear_screen(&context, clear_color);
 
       /* Render first cube */
-      csr_render(&context, CSR_RENDER_WIREFRAME, CSR_CULLING_DISABLED, 6, vertices, vertices_size, indices, indices_size, model_view_projection.e);
+      csr_render(&context, CSR_RENDER_WIREFRAME, CSR_CULLING_DISABLED, vertices, vertices_size, indices, indices_size, model_view_projection.e);
 
       /* Render second cube */
       model = vm_m4x4_translate(vm_m4x4_identity, vm_v3(-2.0, 0.0f, -2.0f));
       model_view_projection = vm_m4x4_rotate(vm_m4x4_mul(projection_view, model), vm_radf(-2.5f * (float)(frame + 1)), vm_v3(1.0f, 1.0f, 1.0f));
-      csr_render(&context, CSR_RENDER_SOLID, CSR_CULLING_CCW_BACKFACE, 6, vertices, vertices_size, indices, indices_size, model_view_projection.e);
+      csr_render(&context, CSR_RENDER_SOLID, CSR_CULLING_CCW_BACKFACE, vertices, vertices_size, indices, indices_size, model_view_projection.e);
 
       /* Render third cube */
       model = vm_m4x4_translate(vm_m4x4_identity, vm_v3(4.0, 0.0f, -5.0f));
       model_view_projection = vm_m4x4_mul(projection_view, model);
-      csr_render(&context, CSR_RENDER_SOLID, CSR_CULLING_CCW_BACKFACE, 6, vertices, vertices_size, indices, indices_size, model_view_projection.e);
+      csr_render(&context, CSR_RENDER_SOLID, CSR_CULLING_CCW_BACKFACE, vertices, vertices_size, indices, indices_size, model_view_projection.e);
 
       /* Save the result to a PPM file */
       csr_save_ppm("cube_%05d.ppm", frame, &context);
@@ -224,7 +236,7 @@ static void csr_test_teddy(void)
       m4x4 model_view_projection = vm_m4x4_mul(projection_view, model);
 
       csr_render_clear_screen(&context, clear_color);
-      csr_render(&context, CSR_RENDER_SOLID, CSR_CULLING_DISABLED, 3, teddy_vertices, teddy_vertices_size, teddy_indices, teddy_indices_size, model_view_projection.e);
+      csr_render(&context, CSR_RENDER_SOLID, CSR_CULLING_DISABLED, teddy_vertices, teddy_vertices_size, teddy_indices, teddy_indices_size, model_view_projection.e);
       csr_save_ppm("teddy_%05d.ppm", frame, &context);
     }
   }
@@ -275,7 +287,7 @@ void csr_test_voxelize_teddy(void)
     return;
   }
 
-  PERF_PROFILE(mvx_convert_voxels_to_mesh_greedy(voxels, grid_x, grid_y, grid_z, 1.0f, vox_vertices, vox_vertices_capacity, (unsigned long *) &vox_vertices_size, vox_indices, vox_indices_capacity,(unsigned long *) &vox_indices_size));
+  PERF_PROFILE(mvx_convert_voxels_to_mesh_greedy(voxels, grid_x, grid_y, grid_z, 1.0f, vox_vertices, vox_vertices_capacity, (unsigned long *)&vox_vertices_size, vox_indices, vox_indices_capacity, (unsigned long *)&vox_indices_size));
 
   {
     /* Camera setup using your linear algebra library */
@@ -309,7 +321,7 @@ void csr_test_voxelize_teddy(void)
 
         model_view_projection = vm_m4x4_mul(projection_view, vm_transformation_matrix(&child));
 
-        csr_render(&context, CSR_RENDER_SOLID, CSR_CULLING_DISABLED, 3, teddy_vertices, teddy_vertices_size, teddy_indices, teddy_indices_size, model_view_projection.e);
+        csr_render(&context, CSR_RENDER_SOLID, CSR_CULLING_DISABLED, teddy_vertices, teddy_vertices_size, teddy_indices, teddy_indices_size, model_view_projection.e);
       }
 
       /* Render voxelized teddy converted to vertices/indices mesh */
@@ -325,7 +337,7 @@ void csr_test_voxelize_teddy(void)
 
         model_view_projection = vm_m4x4_mul(projection_view, vm_transformation_matrix(&child));
 
-        csr_render(&context, CSR_RENDER_SOLID, CSR_CULLING_DISABLED, 3, vox_vertices, vox_vertices_size, vox_indices, vox_indices_size, model_view_projection.e);
+        csr_render(&context, CSR_RENDER_SOLID, CSR_CULLING_DISABLED, vox_vertices, vox_vertices_size, vox_indices, vox_indices_size, model_view_projection.e);
       }
 
       /* Render voxelized teddy */
@@ -354,7 +366,7 @@ void csr_test_voxelize_teddy(void)
               model_view_projection = vm_m4x4_mul(projection_view, model);
 
               /* Render voxel cube */
-              csr_render(&context, CSR_RENDER_SOLID, CSR_CULLING_CCW_BACKFACE, 6, vertices, vertices_size, indices, indices_size, model_view_projection.e);
+              csr_render(&context, CSR_RENDER_SOLID, CSR_CULLING_CCW_BACKFACE, vertices, vertices_size, indices, indices_size, model_view_projection.e);
             }
           }
         }
@@ -454,7 +466,7 @@ void csr_test_voxelize_head(void)
               model_view_projection = vm_m4x4_mul(projection_view, model);
 
               /* Render voxel cube */
-              csr_render(&context, CSR_RENDER_SOLID, CSR_CULLING_CCW_BACKFACE, 6, vertices, vertices_size, indices, indices_size, model_view_projection.e);
+              csr_render(&context, CSR_RENDER_SOLID, CSR_CULLING_CCW_BACKFACE, vertices, vertices_size, indices, indices_size, model_view_projection.e);
             }
           }
         }

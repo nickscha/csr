@@ -149,6 +149,7 @@ typedef struct csr_color
   unsigned char r;
   unsigned char g;
   unsigned char b;
+  unsigned char a;
 
 } csr_color;
 
@@ -206,12 +207,13 @@ CSR_API CSR_INLINE int csr_init_model(csr_context *context, void *memory, unsign
   return 1;
 }
 
-CSR_API CSR_INLINE csr_color csr_init_color(unsigned char r, unsigned char g, unsigned char b)
+CSR_API CSR_INLINE csr_color csr_init_color(unsigned char r, unsigned char g, unsigned char b, unsigned char a)
 {
   csr_color result;
   result.r = r;
   result.g = g;
   result.b = b;
+  result.a = a;
 
   return result;
 }
@@ -386,6 +388,7 @@ CSR_API CSR_INLINE void csr_draw_triangle(csr_context *context, float p0[3], flo
             pixel_color.r = (unsigned char)current_r;
             pixel_color.g = (unsigned char)current_g;
             pixel_color.b = (unsigned char)current_b;
+            pixel_color.a = 255;
 
             context->framebuffer[index] = pixel_color;
             context->zbuffer[index] = z;
@@ -412,7 +415,7 @@ CSR_API CSR_INLINE void csr_draw_triangle(csr_context *context, float p0[3], flo
   }
 }
 
-CSR_API CSR_INLINE void csr_render(csr_context *context, csr_render_mode render_mode, csr_culling_mode culling_mode, int stride, float *vertices, unsigned int num_vertices, int *indices, unsigned int num_indices, float projection_view_model_matrix[16])
+CSR_API CSR_INLINE void csr_render(csr_context *context, csr_render_mode render_mode, csr_culling_mode culling_mode, float *vertices, unsigned int num_vertices, int *indices, unsigned int num_indices, float projection_view_model_matrix[16])
 {
   unsigned int i;
 
@@ -443,9 +446,9 @@ CSR_API CSR_INLINE void csr_render(csr_context *context, csr_render_mode render_
     float v1_screen[3];
     float v2_screen[3];
 
-    csr_pos_init(pos0, vertices[i0 * stride + 0], vertices[i0 * stride + 1], vertices[i0 * stride + 2], 1.0f);
-    csr_pos_init(pos1, vertices[i1 * stride + 0], vertices[i1 * stride + 1], vertices[i1 * stride + 2], 1.0f);
-    csr_pos_init(pos2, vertices[i2 * stride + 0], vertices[i2 * stride + 1], vertices[i2 * stride + 2], 1.0f);
+    csr_pos_init(pos0, vertices[i0 * 3 + 0], vertices[i0 * 3 + 1], vertices[i0 * 3 + 2], 1.0f);
+    csr_pos_init(pos1, vertices[i1 * 3 + 0], vertices[i1 * 3 + 1], vertices[i1 * 3 + 2], 1.0f);
+    csr_pos_init(pos2, vertices[i2 * 3 + 0], vertices[i2 * 3 + 1], vertices[i2 * 3 + 2], 1.0f);
 
     csr_m4x4_mul_v4(v0_transformed, projection_view_model_matrix, pos0);
     csr_m4x4_mul_v4(v1_transformed, projection_view_model_matrix, pos1);
@@ -495,15 +498,15 @@ CSR_API CSR_INLINE void csr_render(csr_context *context, csr_render_mode render_
     /* 5. Rasterization & Depth Testing */
     if (render_mode == CSR_RENDER_SOLID)
     {
-      csr_color color0 = stride == 3 ? csr_init_color(255, 50, 50) : csr_init_color((unsigned char)vertices[i0 * stride + 3], (unsigned char)vertices[i0 * stride + 4], (unsigned char)vertices[i0 * stride + 5]);
-      csr_color color1 = stride == 3 ? csr_init_color(50, 255, 50) : csr_init_color((unsigned char)vertices[i1 * stride + 3], (unsigned char)vertices[i1 * stride + 4], (unsigned char)vertices[i1 * stride + 5]);
-      csr_color color2 = stride == 3 ? csr_init_color(50, 50, 255) : csr_init_color((unsigned char)vertices[i2 * stride + 3], (unsigned char)vertices[i2 * stride + 4], (unsigned char)vertices[i2 * stride + 5]);
+      csr_color color0 = csr_init_color(255, 50, 50, 255);
+      csr_color color1 = csr_init_color(50, 255, 50, 255);
+      csr_color color2 = csr_init_color(50, 50, 255, 255);
 
       csr_draw_triangle(context, v0_screen, v1_screen, v2_screen, color0, color1, color2);
     }
     else
     {
-      csr_color color0 = stride == 3 ? csr_init_color(255, 50, 50) : csr_init_color((unsigned char)vertices[i0 * stride + 3], (unsigned char)vertices[i0 * stride + 4], (unsigned char)vertices[i0 * stride + 5]);
+      csr_color color0 = csr_init_color(255, 50, 50, 255);
 
       csr_draw_line(context, v0_screen, v1_screen, color0);
       csr_draw_line(context, v1_screen, v2_screen, color0);
