@@ -180,18 +180,18 @@ typedef struct csr_context
 
 } csr_context;
 
-CSR_API CSR_INLINE unsigned long csr_memory_size(int width, int height)
+CSR_API CSR_INLINE unsigned int csr_memory_size(int width, int height)
 {
-  unsigned long area = (unsigned long)(width * height);
+  unsigned int area = (unsigned int)(width * height);
 
-  return (unsigned long)(area * (unsigned long)sizeof(csr_color) + /* framebuffer size */
-                         area * (unsigned long)sizeof(float)       /* zbuffer size     */
+  return (unsigned int)(area * (unsigned int)sizeof(csr_color) + /* framebuffer size */
+                        area * (unsigned int)sizeof(float)       /* zbuffer size     */
   );
 }
 
-CSR_API CSR_INLINE int csr_init_model(csr_context *context, void *memory, unsigned long memory_size, int width, int height)
+CSR_API CSR_INLINE int csr_init_model(csr_context *context, void *memory, unsigned int memory_size, int width, int height)
 {
-  unsigned long memory_framebuffer_size = (unsigned long)(width * height) * (unsigned long)sizeof(csr_color);
+  unsigned int memory_framebuffer_size = (unsigned int)(width * height) * (unsigned int)sizeof(csr_color);
 
   if (memory_size < csr_memory_size(width, height))
   {
@@ -412,9 +412,9 @@ CSR_API CSR_INLINE void csr_draw_triangle(csr_context *context, float p0[3], flo
   }
 }
 
-CSR_API CSR_INLINE void csr_render(csr_context *context, csr_render_mode render_mode, csr_culling_mode culling_mode, int stride, float *vertices, unsigned long num_vertices, int *indices, unsigned long num_indices, float projection_view_model_matrix[16])
+CSR_API CSR_INLINE void csr_render(csr_context *context, csr_render_mode render_mode, csr_culling_mode culling_mode, int stride, float *vertices, unsigned int num_vertices, int *indices, unsigned int num_indices, float projection_view_model_matrix[16])
 {
-  unsigned long i;
+  unsigned int i;
 
   (void)num_vertices;
 

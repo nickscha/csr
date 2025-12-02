@@ -41,8 +41,8 @@ static int indices[] = {
     0, 4, 7, 0, 7, 3  /* Left face (-x normal)                   */
 };
 
-static unsigned long vertices_size = sizeof(vertices) / sizeof(vertices[0]);
-static unsigned long indices_size = sizeof(indices) / sizeof(indices[0]);
+static unsigned int vertices_size = sizeof(vertices) / sizeof(vertices[0]);
+static unsigned int indices_size = sizeof(indices) / sizeof(indices[0]);
 
 /* Default clear screen color */
 static csr_color clear_color = {40, 40, 40};
@@ -129,7 +129,7 @@ static void csr_test_cube_scene_with_memory_alloc(void)
   int width = 800;
   int height = 600;
 
-  unsigned long memory_size = csr_memory_size(width, height);
+  unsigned int memory_size = csr_memory_size(width, height);
   void *memory = malloc(memory_size);
 
   csr_context context = {0};
@@ -190,7 +190,7 @@ static void csr_test_teddy(void)
   int width = 800;
   int height = 600;
 
-  unsigned long memory_size = csr_memory_size(width, height);
+  unsigned int memory_size = csr_memory_size(width, height);
   void *memory = malloc(memory_size);
 
   csr_context context = {0};
@@ -240,10 +240,10 @@ void csr_test_voxelize_teddy(void)
 #define grid_z 101
   unsigned char *voxels = malloc(grid_x * grid_y * grid_z);
 
-  unsigned long vox_vertices_capacity = 1000000 * sizeof(float);
-  unsigned long vox_indices_capacity = 1000000 * sizeof(int);
-  unsigned long vox_vertices_size = 0;
-  unsigned long vox_indices_size = 0;
+  unsigned int vox_vertices_capacity = 1000000 * sizeof(float);
+  unsigned int vox_indices_capacity = 1000000 * sizeof(int);
+  unsigned int vox_vertices_size = 0;
+  unsigned int vox_indices_size = 0;
   float *vox_vertices = malloc(vox_vertices_capacity);
   int *vox_indices = malloc(vox_indices_capacity);
 
@@ -252,7 +252,7 @@ void csr_test_voxelize_teddy(void)
   int width = 800;
   int height = 600;
 
-  unsigned long memory_size = csr_memory_size(width, height);
+  unsigned int memory_size = csr_memory_size(width, height);
   void *memory = malloc(memory_size);
 
   csr_context context = {0};
@@ -275,7 +275,7 @@ void csr_test_voxelize_teddy(void)
     return;
   }
 
-  PERF_PROFILE(mvx_convert_voxels_to_mesh_greedy(voxels, grid_x, grid_y, grid_z, 1.0f, vox_vertices, vox_vertices_capacity, &vox_vertices_size, vox_indices, vox_indices_capacity, &vox_indices_size));
+  PERF_PROFILE(mvx_convert_voxels_to_mesh_greedy(voxels, grid_x, grid_y, grid_z, 1.0f, vox_vertices, vox_vertices_capacity, (unsigned long *) &vox_vertices_size, vox_indices, vox_indices_capacity,(unsigned long *) &vox_indices_size));
 
   {
     /* Camera setup using your linear algebra library */
@@ -384,7 +384,7 @@ void csr_test_voxelize_head(void)
   int width = 800;
   int height = 600;
 
-  unsigned long memory_size = csr_memory_size(width, height);
+  unsigned int memory_size = csr_memory_size(width, height);
   void *memory = malloc(memory_size);
 
   csr_context context = {0};
