@@ -142,11 +142,6 @@ If you want to change to a row major order you can use the following define befo
 #include "csr.h"
 ```
 
-## Run Example: nostdlib, freestsanding
-
-In this repo you will find the "examples/csr_win32_nostdlib.c" with the corresponding "build.bat" file which
-creates an executable only linked to "kernel32" and is not using the C standard library and executes the program afterwards.
-
 ## "nostdlib" Motivation & Purpose
 
 nostdlib is a lightweight, minimalistic approach to C development that removes dependencies on the standard library. The motivation behind this project is to provide developers with greater control over their code by eliminating unnecessary overhead, reducing binary size, and enabling deployment in resource-constrained environments.
