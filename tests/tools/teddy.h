@@ -4797,7 +4797,7 @@ static int teddy_indices[] = {
     1547, 1545, 1551
 };
 
-static unsigned long teddy_vertices_size = 4794UL;
-static unsigned long teddy_indices_size = 9576UL;
+static unsigned int teddy_vertices_size = 4794UL;
+static unsigned int teddy_indices_size = 9576UL;
 
 #endif /* TEDDY_H */

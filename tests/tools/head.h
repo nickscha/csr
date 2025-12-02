@@ -26535,7 +26535,7 @@ static int head_indices[] = {
     7904, 7906, 1263
 };
 
-static unsigned long head_vertices_size = 26532UL;
-static unsigned long head_indices_size = 53052UL;
+static unsigned int head_vertices_size = 26532UL;
+static unsigned int head_indices_size = 53052UL;
 
 #endif /* HEAD_H */
