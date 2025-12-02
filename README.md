@@ -23,17 +23,16 @@ Download or clone csr.h and include it in your project.
 
 int main() {
 
-    /* Vertex data array with interleaved position and color (RGB) */
+    /* Vertex data array (position x,y,z)*/
     float vertices[] = {
-        /* Position x,y,z  | Color r,g,b */
-        -0.5f, -0.5f,  0.5f, 255.0f,   0.0f,   0.0f, /* 0: Red     */
-         0.5f, -0.5f,  0.5f,   0.0f, 255.0f,   0.0f, /* 1: Green   */
-         0.5f,  0.5f,  0.5f,   0.0f,   0.0f, 255.0f, /* 2: Blue    */
-        -0.5f,  0.5f,  0.5f, 255.0f, 255.0f,   0.0f, /* 3: Yellow  */
-        -0.5f, -0.5f, -0.5f, 255.0f,   0.0f, 255.0f, /* 4: Magenta */
-         0.5f, -0.5f, -0.5f,   0.0f, 255.0f, 255.0f, /* 5: Cyan    */
-         0.5f,  0.5f, -0.5f, 255.0f, 255.0f, 255.0f, /* 6: White   */
-        -0.5f,  0.5f, -0.5f, 128.0f, 128.0f, 128.0f  /* 7: Gray    */
+        -0.5f, -0.5f,  0.5f,
+         0.5f, -0.5f,  0.5f,
+         0.5f,  0.5f,  0.5f,
+        -0.5f,  0.5f,  0.5f,
+        -0.5f, -0.5f, -0.5f,
+         0.5f, -0.5f, -0.5f,
+         0.5f,  0.5f, -0.5f,
+        -0.5f,  0.5f, -0.5f
     };
 
     /* Index data counterclockwise to form the triangles of a cube.  */
@@ -105,7 +104,7 @@ int main() {
             csr_render(
                 &context, 
                 CSR_RENDER_SOLID, 
-                CSR_CULLING_CCW_BACKFACE, 3, 
+                CSR_CULLING_CCW_BACKFACE, 
                 vertices, vertices_size, 
                 indices, indices_size, 
                 model_view_projection.e
