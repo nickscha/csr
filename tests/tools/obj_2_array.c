@@ -200,8 +200,8 @@ int main(int argc, char *argv[])
     }
     fprintf(hf, "};\n\n");
 
-    fprintf(hf, "static unsigned long %s_vertices_size = %dUL;\n", clean_prefix, vert_count * 3);
-    fprintf(hf, "static unsigned long %s_indices_size = %dUL;\n\n", clean_prefix, face_count * 3);
+    fprintf(hf, "static unsigned int %s_vertices_size = %dUL;\n", clean_prefix, vert_count * 3);
+    fprintf(hf, "static unsigned int %s_indices_size = %dUL;\n\n", clean_prefix, face_count * 3);
     fprintf(hf, "#endif /* %s */\n", guard);
 
     fclose(hf);
